@@ -650,37 +650,7 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 #sync-status.error{color:var(--red);border-color:var(--red-b);background:var(--red-bg)}
 #sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
-/* Firebase setup banner */
-#fb-banner{
-  position:fixed;inset:0;background:rgba(10,37,64,.85);
-  z-index:9999;display:flex;align-items:center;justify-content:center;
-  padding:20px;backdrop-filter:blur(6px);
-}
-#fb-banner.hidden{display:none}
-#fb-box{
-  background:var(--surface);border-radius:14px;
-  border:1px solid var(--line);width:100%;max-width:520px;
-  padding:28px;box-shadow:var(--shadow-modal);
-}
-#fb-box h2{font-size:18px;font-weight:800;color:var(--ink-1);margin-bottom:6px;letter-spacing:-.3px}
-#fb-box p{font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:16px}
-#fb-box ol{font-size:13px;color:var(--ink-2);line-height:2;padding-left:18px;margin-bottom:18px}
-#fb-box ol a{color:var(--amber-t);font-weight:600}
-#fb-config{
-  width:100%;border:1px solid var(--line);border-radius:8px;
-  padding:10px 12px;font-size:12px;font-family:monospace;
-  color:var(--ink-1);background:var(--bg);outline:none;
-  resize:vertical;min-height:130px;transition:border-color .15s;
-}
-#fb-config:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.1)}
-#fb-save-btn{
-  width:100%;margin-top:12px;padding:12px;
-  background:var(--amber);border:1px solid var(--amber-h);
-  border-radius:8px;color:#fff;font-weight:700;
-  font-size:14px;cursor:pointer;transition:background .12s;
-}
-#fb-save-btn:hover{background:var(--amber-h)}
-#fb-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
 
 /* Toast */
 #toast{
@@ -962,36 +932,7 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 
 
 
-<!-- Supabase Setup Banner -->
-<div id="fb-banner" class="hidden">
-  <div id="fb-box">
-    <h2>☁️ Connect Cloud Sync (Supabase)</h2>
-    <p>To share leads across all laptops in real-time, connect your free Supabase project. All devices will instantly see every change.</p>
-    <ol>
-      <li>Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → New project (free)</li>
-      <li>Open the <b>SQL Editor</b> and run this once:<br>
-        <code style="font-size:10.5px;background:#f1f5f9;padding:6px 8px;border-radius:6px;display:block;margin-top:6px;white-space:pre-wrap">create table if not exists bbk_crm (
-  id int primary key default 1,
-  leads jsonb default '[]',
-  lead_counter int default 0,
-  saved_at timestamptz default now(),
-  constraint single_row check (id = 1)
-);
-insert into bbk_crm (id) values (1) on conflict do nothing;
-alter table bbk_crm replica identity full;</code>
-      </li>
-      <li>Go to <b>Project Settings → API</b> → copy <b>Project URL</b> and <b>anon public</b> key</li>
-      <li>Paste both below and click Save</li>
-    </ol>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <input id="fb-url" class="fb-config" placeholder="Project URL — https://xxxx.supabase.co" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:monospace"/>
-      <input id="fb-key" class="fb-config" placeholder="anon public key — eyJhbGci…" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:monospace"/>
-    </div>
-    <div id="fb-err">⚠ Invalid config. Check your URL and key and try again.</div>
-    <button id="fb-save-btn" onclick="saveFbConfig()">Save &amp; Connect</button>
-    <p style="margin-top:12px;font-size:11.5px;color:var(--ink-4)">Your data stays in your own Supabase project. Anthropic/Claude has no access to it.</p>
-  </div>
-</div>
+
 
 <!-- ═══ RAIL ════════════════════════════ -->
 <div id="rail-overlay" onclick="toggleRail()"></div>
@@ -3216,12 +3157,15 @@ function toggleRail(){
 /* ═══════════════ PERSISTENCE ═══════════════ */
 var LS_KEY="bbk_crm_v8";
 var LS_BAK="bbk_crm_v8_bak";
-var SB_CFG_KEY="bbk_sb_config";
 var ONE_YEAR_MS=365*24*60*60*1000;
 var _sbClient=null;
 var _sbReady=false;
 var _suppressRemoteUpdate=false;
 var _realtimeChannel=null;
+
+/* Hardcoded Supabase credentials — shared across all devices */
+var SB_URL="https://ejiuwjjrfuxnldhqbzxc.supabase.co";
+var SB_KEY="sb_publishable_c4TtqxeWp0uSoQQ3ziYYcQ_0HffAQIO";
 
 /* ── Sync status UI ──────────────────────── */
 function setSyncStatus(state,label){
@@ -3291,36 +3235,12 @@ function lsSave(){
     });
 }
 
-/* ── Supabase config storage ──────────────── */
-function loadSbConfig(){
-  try{
-    var raw=localStorage.getItem(SB_CFG_KEY);
-    if(!raw)return null;
-    return JSON.parse(raw);
-  }catch(e){return null;}
-}
-
-function saveFbConfig(){ // kept same name so HTML onclick works
-  var url=(document.getElementById("fb-url").value||"").trim();
-  var key=(document.getElementById("fb-key").value||"").trim();
-  var err=document.getElementById("fb-err");
-  err.style.display="none";
-  if(!url.startsWith("https://")||!key||key.length<20){
-    err.style.display="block";return;
-  }
-  var cfg={url:url,key:key};
-  localStorage.setItem(SB_CFG_KEY,JSON.stringify(cfg));
-  document.getElementById("fb-banner").classList.add("hidden");
-  initSupabase(cfg);
-}
-
 /* ── Supabase init + real-time listener ────── */
-function initSupabase(cfg){
+function initSupabase(){
   try{
-    _sbClient=supabase.createClient(cfg.url,cfg.key);
+    _sbClient=supabase.createClient(SB_URL,SB_KEY);
     setSyncStatus("saving","Connecting…");
 
-    // Load latest data first
     _sbClient.from("bbk_crm").select("leads,lead_counter").eq("id",1).single()
       .then(function(res){
         if(res.data&&res.data.leads&&res.data.leads.length){
@@ -3328,7 +3248,7 @@ function initSupabase(cfg){
           lsSaveLocal();
           renderView();
         } else if(leads.length){
-          lsSave(); // push local data up on first connect
+          lsSave();
         }
         _sbReady=true;
         setSyncStatus("synced","Live");
@@ -3358,7 +3278,7 @@ function subscribeRealtime(){
           lsSaveLocal();
           renderView();
           setSyncStatus("synced","Live");
-          toast("🔄 Data updated from another device");
+          toast("🔄 Updated from another device");
         }
       }
     )
@@ -3375,16 +3295,6 @@ function lsClear(){
   leads=[];leadCounter=0;
   lsSave();renderView();
   toast("All data cleared. Ready for real leads.");
-}
-
-function maybeShowFbBanner(){
-  var cfg=loadSbConfig();
-  if(cfg){
-    initSupabase(cfg);
-  } else {
-    document.getElementById("fb-banner").classList.remove("hidden");
-    setSyncStatus("error","Not connected");
-  }
 }
 
 // Auto-backup every 30 min
@@ -3546,7 +3456,6 @@ document.addEventListener("DOMContentLoaded",function(){
 
 /* ═══════════════ INIT ═══════════════ */
 if(!lsLoad()){seed();lsSaveLocal();}
-// Rail state: open on desktop, closed on mobile
 if(window.innerWidth>=900){
   document.body.classList.add("rail-open");
 }else{
@@ -3554,9 +3463,9 @@ if(window.innerWidth>=900){
 }
 if(window.innerWidth>=700)setView("pipeline");
 else setView("leads");
-// Firebase init (after DOM ready)
+// Auto-connect Supabase on every device
 document.addEventListener("DOMContentLoaded",function(){
-  maybeShowFbBanner();
+  initSupabase();
 });
 </script>
 

@@ -1980,6 +1980,13 @@ function renderPanel(){
       cLead.screening.qa[inp.dataset.qa]=inp.value;
     });
   });
+  // wire document checklist items
+  var ditems=el("mpanel").querySelectorAll("[data-docid]");
+  ditems.forEach(function(div){
+    div.addEventListener("click",function(){
+      toggleDoc(div.dataset.docid);
+    });
+  });
 }
 
 function logActivity(lead,msg){

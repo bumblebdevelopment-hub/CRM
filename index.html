@@ -1249,127 +1249,7 @@ function calClear(prefix,dp,tp){
 
 /* ═══════════════ SEED ═══════════════ */
 function seed(){
-  leads=[
-    {
-      id:1,
-      bbkId:"BBK-2026-01",
-      parentName:"Mandeep S Kansara",
-      phone:"9824821207",
-      email:"mandeep.kansara@gmail.com",
-      childName:"Aarav Kansara",
-      childAge:"3.5 yrs",
-      program:"Kindergarten 1 (K1)",
-      interestLevel:"Very High",
-      source:"Referral by friend",
-      remarks:"Father very particular about Montessori approach. Mother works at HDFC Bank. Flexible on fee payment plan. Keen to start June 2026.",
-
-      outreach:{
-        callDone:true,    callDate:"2026-02-10",
-        callNotes:"Father called. Very engaged. Asked about K1 curriculum, teacher ratio, and school timings. Interested in annual fee plan.",
-        waSent:true,      waDate:"2026-02-10",
-        visitBooked:true, visitDate:"2026-02-14", visitTime:"10:30 AM",
-        visitDone:true,
-        visitNotes:"Both parents attended. Toured classrooms, met Ms. Reena. Child played comfortably in the Montessori room. Parents very impressed with learning corners and outdoor area. Took brochure and fee schedule."
-      },
-
-      firstBuzz:{
-        done:true,
-        receivedDate:"2026-02-14",
-        formType:"K1",
-        childDOB:"2021-09-04",
-        address:"12, Shree Nagar Society, Nr. Mavdi Circle, Rajkot – 360004",
-        fatherName:"Mandeep S Kansara",
-        motherName:"Priya M Kansara",
-        medicalNotes:"No known allergies. Mild lactose sensitivity — avoids cow milk. Paediatrician: Dr. Hemang Shah, 9825001122.",
-        siblingName:"Krish Kansara",
-        siblingDOB:"2024-03-18"
-      },
-
-      counselling:{
-        done:true,
-        date:"2026-02-14",
-        counsellorName:"Ms. Reena Mehta",
-        outcome:"Positive",
-        notes:"Discussed BumbleB philosophy, play-based learning, and K1 curriculum. Father asked about homework policy — explained none at K1. Mother asked about safety & CCTV — confirmed. Parents agreed to proceed to screening. Screening slot booked on the spot.",
-        screeningSlotBooked:true,
-        screeningDate:"2026-02-21",
-        screeningTime:"10:30 AM"
-      },
-
-      screening:{
-        done:true,
-        scheduledDate:"2026-02-21",
-        scheduledTime:"10:30 AM",
-        result:"Ready for admission",
-        examiner:"Ms. Falak Ajmeri",
-        observations:"Aarav was confident and cooperative throughout. Strong language skills — named all colours, shapes, and body parts correctly. Counted to 20 with ease. Fine motor control good — held pencil correctly, drew recognisable shapes. Gross motor: balanced well, kicked ball, climbed steps alternately. Mild hesitation on puzzle (8-piece) but completed with one prompt. Overall excellent readiness for K1.",
-        scores:{
-          "General Knowledge":"EP",
-          "Gross Motor":"GP",
-          "Fine Motor":"GP",
-          "Language":"EP",
-          "Cognitive":"EP",
-          "Number Concepts":"EP",
-          "Writing Skills":"GP",
-          "Visual Perception":"GP"
-        }
-      },
-
-      admissionForm:{
-        done:true,
-        formType:"K1",
-        offerSent:true,
-        parentAccepted:true,
-        docsSubmitted:true,
-        schoolConfirmed:true,
-        docs:{
-          "Admission Form":"true",
-          "Birth Certificate":"true",
-          "Child Photos (2)":"true",
-          "Family Photograph":"true",
-          "Parent ID Proof":"true",
-          "Address Proof":"true",
-          "Previous School Records":"true",
-          "Medical Information Form":"true",
-          "Photography Consent Form":"true",
-          "Emergency Medical Consent":"true"
-        }
-      },
-
-      fee:{
-        done:true,
-        program:"Kindergarten 1 (K1)",
-        paymentPlan:"Annual",
-        regFee:"5000",
-        amount:"70000",
-        amountPaid:"70000",
-        paymentMode:"UPI",
-        receiptNo:"BBK-RCPT-001",
-        paymentDate:"2026-02-28",
-        notes:"Full annual fee paid via UPI (GPay). Registration fee adjusted. Receipt issued."
-      },
-
-      stage:"fee",
-      siblingIds:[],
-      lastTouched:"2026-02-28",
-      activityLog:[
-        {ts:"2026-02-10T09:15:00.000Z", msg:"Lead created — Mandeep S Kansara"},
-        {ts:"2026-02-10T09:30:00.000Z", msg:"Call completed"},
-        {ts:"2026-02-10T10:00:00.000Z", msg:"WhatsApp sent"},
-        {ts:"2026-02-14T10:30:00.000Z", msg:"Visit completed"},
-        {ts:"2026-02-14T11:00:00.000Z", msg:"First Buzz form received"},
-        {ts:"2026-02-14T11:30:00.000Z", msg:"Counselling done — Positive"},
-        {ts:"2026-02-14T11:35:00.000Z", msg:"Screening booked — 2026-02-21"},
-        {ts:"2026-02-21T11:00:00.000Z", msg:"Screening done — Ready for admission"},
-        {ts:"2026-02-21T12:00:00.000Z", msg:"Offer sent to parents"},
-        {ts:"2026-02-22T09:00:00.000Z", msg:"Parents accepted offer"},
-        {ts:"2026-02-25T10:00:00.000Z", msg:"Documents submitted"},
-        {ts:"2026-02-25T10:30:00.000Z", msg:"Admission confirmed by school"},
-        {ts:"2026-02-28T14:00:00.000Z", msg:"Fee recorded — ₹70000 via UPI"},
-        {ts:"2026-02-28T14:05:00.000Z", msg:"Stage changed → Fee Done"}
-      ]
-    }
-  ];
+  leads=[];
   leadCounter=1;
 }
 
@@ -3145,8 +3025,8 @@ function toggleRail(){
 }
 
 /* ═══════════════ PERSISTENCE ═══════════════ */
-var LS_KEY="bbk_crm_v7";
-var LS_BAK="bbk_crm_v7_bak";          // rolling backup written every 30 min
+var LS_KEY="bbk_crm_v8";
+var LS_BAK="bbk_crm_v8_bak";          // rolling backup written every 30 min
 var ONE_YEAR_MS=365*24*60*60*1000;
 
 function lsSave(){
@@ -3191,8 +3071,9 @@ function lsClear(){
   if(code!=="DELETE")return;
   localStorage.removeItem(LS_KEY);
   localStorage.removeItem(LS_BAK);
-  seed();lsSave();renderView();
-  toast("Data cleared — demo lead loaded");
+  leads=[];leadCounter=0;
+  lsSave();renderView();
+  toast("All data cleared. Ready for real leads.");
 }
 
 /* ═══════════════ CSV EXPORT ═══════════════ */

@@ -89,7 +89,33 @@ input,select,textarea,button{font-family:inherit}
   display:flex;flex-direction:column;
   overflow:hidden;flex-shrink:0;
   border-right:1px solid rgba(255,255,255,.04);
+  transition:transform .22s cubic-bezier(.4,0,.2,1),width .22s cubic-bezier(.4,0,.2,1),min-width .22s cubic-bezier(.4,0,.2,1);
 }
+#rail.collapsed{
+  transform:translateX(calc(-1 * var(--rail-w)));
+  width:0;min-width:0;
+  border-right:none;
+}
+/* Overlay behind rail on mobile when open */
+#rail-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199;
+}
+#rail-overlay.show{display:block}
+
+/* Toggle button — always visible */
+#rail-toggle{
+  position:fixed;left:0;top:50%;transform:translateY(-50%);
+  width:20px;height:52px;
+  background:var(--navy);border:none;border-radius:0 8px 8px 0;
+  cursor:pointer;z-index:300;
+  display:flex;align-items:center;justify-content:center;
+  transition:left .22s cubic-bezier(.4,0,.2,1),background .15s;
+  box-shadow:2px 0 8px rgba(0,0,0,.18);
+}
+#rail-toggle:hover{background:var(--amber);width:22px;}
+#rail-toggle svg{transition:transform .2s}
+body.rail-open #rail-toggle{left:var(--rail-w)}
+body.rail-open #rail-toggle svg{transform:scaleX(-1)}
 
 .rail-top{
   height:var(--bar-h);display:flex;align-items:center;
@@ -763,6 +789,12 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 <body>
 
 <!-- ═══ RAIL ════════════════════════════ -->
+<div id="rail-overlay" onclick="toggleRail()"></div>
+<button id="rail-toggle" onclick="toggleRail()" title="Toggle sidebar">
+  <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+    <path d="M7 2L3 8l4 6" stroke="rgba(255,255,255,.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 <aside id="rail">
   <div class="rail-top">
     <div class="rail-bee">🐝</div>
@@ -850,9 +882,9 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
     <div class="bar-right">
       <span class="lcount" id="lead-count"></span>
       <button class="btn btn-ghost" onclick="openScript('wa')">WA Templates</button>
-      <button class="btn btn-ghost" onclick="downloadAllFirstBuzz()" title="Download First Buzz form for every lead">
+      <button class="btn btn-ghost" onclick="downloadFullProfile(leads[0])" title="Download full admission file">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        Export All Forms
+        Full File PDF
       </button>
       <button class="btn btn-cta" onclick="openLead(null)">
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -1648,10 +1680,14 @@ function pFirstBuzz(){
     sh2("✅ Form Status")+
     ck("🐝 First Buzz form received, filled & complete","firstBuzz.done",fb.done)+
     (fb.done?tdone("First Buzz application accepted ✓"):"")+
-    '<div style="margin:12px 0">'+
-      '<button class="btn btn-ghost" style="width:100%;justify-content:center;gap:8px" onclick="downloadFirstBuzz(cLead)">'+
-        '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'+
-        ' Download First Buzz Form (PDF)'+
+    '<div style="margin:12px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<button class="btn btn-ghost" style="justify-content:center;gap:6px" onclick="downloadFirstBuzz(cLead)">'+
+        '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'+
+        'First Buzz Only'+
+      '</button>'+
+      '<button class="btn btn-cta" style="justify-content:center;gap:6px" onclick="downloadFullProfile(cLead)">'+
+        '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'+
+        'Full Admission File'+
       '</button>'+
     '</div>'+
     gate(rdy,"Unlock Counselling →","Needs: Form marked received + DOB + Parent names");
@@ -2405,6 +2441,352 @@ function downloadAllFirstBuzz(){
   toast("Opening "+valid.length+" form"+(valid.length>1?"s":"")+" — allow popups if blocked");
 }
 
+
+function downloadFullProfile(lead){
+  var l=lead;
+
+  function v(val){ return val||(val===false?"No":"—"); }
+  function fmtD(ds){
+    if(!ds)return "—";
+    var d=new Date(ds);
+    return d.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
+  }
+  function fmtTs(ts){
+    if(!ts)return"";
+    var d=new Date(ts);
+    return d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})+" · "+
+           d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  }
+
+  var SCORE_LABEL={EP:"Excellent",GP:"Good",SP:"Satisfactory",NP:"Needs Support",ND:"Not Done"};
+  var SCORE_COLOR={EP:"#065F46",GP:"#1E40AF",SP:"#92400E",NP:"#991B1B",ND:"#64748B"};
+  var SCORE_BG2  ={EP:"#ECFDF5",GP:"#EFF6FF",SP:"#FFFBEB",NP:"#FFF1F2",ND:"#F8FAFC"};
+
+  // ── CSS ─────────────────────────────────────────────────────────────────
+  var css=[
+    "@page{size:A4;margin:14mm 15mm}",
+    "body{font-family:Arial,Helvetica,sans-serif;color:#0F172A;background:#fff;margin:0;font-size:13px;line-height:1.5}",
+    "@media print{.no-print{display:none!important}.pg{page-break-after:always}}",
+    ".pg:last-child{page-break-after:avoid}",
+    ".print-btn{position:fixed;bottom:20px;right:20px;background:#0A2540;border:none;border-radius:8px;color:#fff;font-weight:700;font-size:13px;padding:11px 22px;cursor:pointer;z-index:99;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.25)}",
+    ".print-btn:hover{background:#F59E0B;color:#0A2540}",
+
+    /* page common */
+    ".page-wrap{max-width:780px;margin:0 auto;padding:0 4px}",
+
+    /* header */
+    ".hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:3px solid #F59E0B;margin-bottom:18px}",
+    ".hdr-left{display:flex;align-items:center;gap:12px}",
+    ".hdr-bee{width:52px;height:52px;background:#F59E0B;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px}",
+    ".hdr-school{font-size:20px;font-weight:800;color:#0A2540;letter-spacing:-.4px}",
+    ".hdr-sub{font-size:10px;font-weight:700;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-top:1px}",
+    ".hdr-right{text-align:right;font-size:11px;color:#64748B;line-height:1.8}",
+    ".hdr-id{font-size:15px;font-weight:800;color:#0A2540;letter-spacing:-.3px}",
+
+    /* section */
+    ".sec{margin-bottom:20px}",
+    ".sec-head{display:flex;align-items:center;gap:8px;background:#0A2540;color:#fff;padding:7px 12px;border-radius:6px;margin-bottom:12px}",
+    ".sec-num{width:22px;height:22px;background:#F59E0B;color:#0A2540;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}",
+    ".sec-title{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}",
+    ".sec-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px}",
+    ".badge-done{background:#ECFDF5;color:#065F46}",
+    ".badge-pending{background:#FFF7ED;color:#C2410C}",
+
+    /* grid */
+    ".g2{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:8px}",
+    ".g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px;margin-bottom:8px}",
+    ".field{margin-bottom:8px}",
+    ".field-lbl{font-size:10px;font-weight:700;color:#64748B;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}",
+    ".field-val{font-size:13px;font-weight:600;color:#0F172A;border-bottom:1px solid #E2E8F0;padding-bottom:4px;min-height:22px}",
+    ".field-val.long{border:1px solid #E2E8F0;border-radius:5px;padding:7px 9px;background:#F8FAFC;font-weight:400;white-space:pre-wrap;word-break:break-word}",
+    ".field-val.empty{color:#94A3B8;font-style:italic;font-weight:400}",
+
+    /* scorecard */
+    ".score-table{width:100%;border-collapse:collapse;margin-bottom:10px}",
+    ".score-table th{font-size:10px;font-weight:700;color:#64748B;letter-spacing:.5px;text-transform:uppercase;text-align:left;padding:5px 8px;background:#F8FAFC;border:1px solid #E2E8F0}",
+    ".score-table td{font-size:12.5px;padding:6px 8px;border:1px solid #E2E8F0;vertical-align:middle}",
+    ".score-table tr:nth-child(even) td{background:#FAFAFA}",
+    ".score-pill{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700}",
+
+    /* docs checklist */
+    ".doc-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9}",
+    ".doc-box{width:15px;height:15px;border:2px solid #E2E8F0;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}",
+    ".doc-box.checked{border-color:#059669;background:#ECFDF5;color:#059669}",
+    ".doc-name{font-size:12.5px;font-weight:500;color:#0F172A}",
+
+    /* fee */
+    ".fee-highlight{background:#ECFDF5;border:1px solid #BBF7D0;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}",
+    ".fee-item-lbl{font-size:10px;font-weight:700;color:#065F46;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}",
+    ".fee-item-val{font-size:18px;font-weight:800;color:#0F172A;letter-spacing:-.5px}",
+
+    /* timeline */
+    ".tl{padding:4px 0}",
+    ".tl-row{display:flex;gap:10px;margin-bottom:10px}",
+    ".tl-dot-wrap{display:flex;flex-direction:column;align-items:center}",
+    ".tl-d{width:22px;height:22px;border-radius:50%;background:#F59E0B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}",
+    ".tl-line{width:1px;flex:1;background:#E2E8F0;margin:2px 0}",
+    ".tl-tl{padding-top:3px}",
+    ".tl-msg{font-size:12.5px;font-weight:600;color:#0F172A}",
+    ".tl-ts{font-size:11px;color:#64748B;margin-top:1px}",
+
+    /* signature strip */
+    ".sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:24px;padding-top:12px}",
+    ".sig-box{border-top:1.5px solid #334155;padding-top:6px;text-align:center;font-size:10px;color:#64748B;font-weight:600;letter-spacing:.3px}",
+
+    /* divider */
+    ".divider{border:none;border-top:1px dashed #CBD5E1;margin:18px 0}",
+    ".amber-bar{height:3px;background:linear-gradient(90deg,#F59E0B,#FBBF24);border-radius:99px;margin-bottom:18px}",
+  ].join("\n");
+
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+  function field(lbl, val, wide, multiline){
+    var empty = !val||val==="—";
+    var cls = multiline ? "field-val long" : ("field-val"+(empty?" empty":""));
+    return '<div class="field'+(wide?" full":"")+'">'+
+      '<div class="field-lbl">'+lbl+'</div>'+
+      '<div class="'+cls+'">'+(empty?"Not recorded":val)+'</div>'+
+    '</div>';
+  }
+  function g2(a,b){ return '<div class="g2">'+a+b+'</div>'; }
+  function g3(a,b,c){ return '<div class="g3">'+a+b+c+'</div>'; }
+  function secHead(num, title, done){
+    var badge = done!==undefined
+      ? '<span class="sec-badge '+(done?"badge-done":"badge-pending")+'">'+(done?"✓ Complete":"In progress")+'</span>'
+      : "";
+    return '<div class="sec-head"><div class="sec-num">'+num+'</div><span class="sec-title">'+title+'</span>'+badge+'</div>';
+  }
+
+  // ── PAGE 1: First Buzz + Counselling ─────────────────────────────────────
+  var fb = l.firstBuzz||{};
+  var cn = l.counselling||{};
+
+  var page1 =
+    '<div class="pg page-wrap">'+
+      // Header
+      '<div class="hdr">'+
+        '<div class="hdr-left">'+
+          '<div class="hdr-bee">🐝</div>'+
+          '<div><div class="hdr-school">BumbleB Kidz</div>'+
+          '<div class="hdr-sub">Complete Admission File</div></div>'+
+        '</div>'+
+        '<div class="hdr-right">'+
+          '<div class="hdr-id">'+l.bbkId+'</div>'+
+          '<div>Generated: '+(new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}))+'</div>'+
+          '<div>Programme: <strong>'+(l.program||"—")+'</strong></div>'+
+          '<div>Stage: <strong>'+(l.stage||"").replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()})+'</strong></div>'+
+        '</div>'+
+      '</div>'+
+
+      // Section 1 — First Buzz
+      '<div class="sec">'+
+        secHead(1,"The First Buzz — Inquiry & Registration",fb.done)+
+        g2(field("Student's Full Name",l.childName), field("Date of Birth",fmtD(fb.childDOB)))+
+        g3(field("Age",l.childAge), field("Gender","—"), field("Place of Birth","—"))+
+        g2(field("Programme",l.program), field("Form Received On",fmtD(fb.receivedDate)))+
+        field("Last School Attended", fb.formType||"—")+
+        '<hr class="divider">'+
+        '<div style="font-size:10px;font-weight:700;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px">Family Information</div>'+
+        g2(field("Father's Name",fb.fatherName), field("Mother's Name",fb.motherName))+
+        g2(field("Primary Mobile",l.phone), field("Email",l.email))+
+        field("Home Address",fb.address)+
+        '<hr class="divider">'+
+        '<div style="font-size:10px;font-weight:700;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px">Sibling Details</div>'+
+        g2(field("Sibling's Name",fb.siblingName), field("Sibling's Date of Birth",fmtD(fb.siblingDOB)))+
+        field("Medical History / Allergies / Special Needs", fb.medicalNotes||"—",false,true)+
+        field("Counsellor Remarks", l.remarks||"—",false,true)+
+      '</div>'+
+
+      // Section 2 — Counselling
+      '<div class="sec">'+
+        secHead(2,"Counselling Session",cn.done&&cn.outcome==="Positive")+
+        g3(field("Counselling Date",fmtD(cn.date)), field("Counsellor",cn.counsellorName), field("Outcome",cn.outcome))+
+        field("Session Notes",cn.notes||"—",false,true)+
+        g2(field("Screening Booked",cn.screeningSlotBooked?"Yes":"No"), field("Screening Slot",cn.screeningDate?(fmtD(cn.screeningDate)+" · "+cn.screeningTime):"—"))+
+      '</div>'+
+
+      '<div class="sigs">'+
+        '<div class="sig-box">Parent / Guardian Signature</div>'+
+        '<div class="sig-box">Counsellor Signature</div>'+
+        '<div class="sig-box">Date</div>'+
+      '</div>'+
+    '</div>';
+
+  // ── PAGE 2: Screening ─────────────────────────────────────────────────────
+  var sc = l.screening||{};
+  var scores = sc.scores||{};
+  var prog = l.program||"";
+  var domains = SCREEN_DOMAINS[prog]||SCREEN_DOMAINS["Pre-K"]||[];
+
+  var scoreRows = domains.map(function(d,i){
+    var code = scores[d]||"";
+    var lbl  = SCORE_LABEL[code]||"—";
+    var col  = code?(SCORE_COLOR[code]||"#64748B"):"#94A3B8";
+    var bg   = code?(SCORE_BG2[code]||"#F8FAFC"):"#F8FAFC";
+    return '<tr>'+
+      '<td>'+(i+1)+'</td>'+
+      '<td style="font-weight:600">'+d+'</td>'+
+      '<td>'+(code?('<span class="score-pill" style="background:'+bg+';color:'+col+'">'+code+'</span>'):"—")+'</td>'+
+      '<td style="color:'+col+';font-weight:500">'+lbl+'</td>'+
+    '</tr>';
+  }).join("");
+
+  var page2 =
+    '<div class="pg page-wrap">'+
+      '<div class="amber-bar"></div>'+
+      '<div class="hdr" style="margin-bottom:14px">'+
+        '<div class="hdr-left"><div class="hdr-bee">🐝</div>'+
+          '<div><div class="hdr-school">Discovery Flight — Screening</div>'+
+          '<div class="hdr-sub">'+l.bbkId+' · '+l.childName+' · '+(l.program||"")+'</div></div>'+
+        '</div>'+
+        '<div class="hdr-right"><div>Examiner: <strong>'+(sc.examiner||"—")+'</strong></div>'+
+          '<div>Date: <strong>'+fmtD(sc.scheduledDate)+'</strong></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sec">'+
+        secHead(3,"Discovery Flight Scorecard",sc.done)+
+        '<p style="font-size:11px;color:#64748B;margin:0 0 10px">EP = Excellent &nbsp;·&nbsp; GP = Good &nbsp;·&nbsp; SP = Satisfactory &nbsp;·&nbsp; NP = Needs Support &nbsp;·&nbsp; ND = Not Done</p>'+
+        '<table class="score-table">'+
+          '<thead><tr><th>#</th><th>Domain</th><th>Score</th><th>Descriptor</th></tr></thead>'+
+          '<tbody>'+scoreRows+'</tbody>'+
+        '</table>'+
+        field("Examiner's Observations",sc.observations||"—",false,true)+
+        g2(field("Final Result",sc.result), field("Screening Status",sc.done?"Completed":"Pending"))+
+      '</div>'+
+      '<div class="sigs">'+
+        '<div class="sig-box">Examiner Signature</div>'+
+        '<div class="sig-box">Centre Head Signature</div>'+
+        '<div class="sig-box">Date</div>'+
+      '</div>'+
+    '</div>';
+
+  // ── PAGE 3: Admission + Documents + Fee ──────────────────────────────────
+  var adm = l.admissionForm||{};
+  var fee = l.fee||{};
+
+  var DOC_LIST=[
+    "Admission Form","Birth Certificate","Child Photos (2)","Family Photograph",
+    "Parent ID Proof","Address Proof","Previous School Records",
+    "Medical Information Form","Photography Consent Form","Emergency Medical Consent"
+  ];
+
+  var docRows = DOC_LIST.map(function(d){
+    var checked = adm.docs&&(adm.docs[d]==="true"||adm.docs[d]===true);
+    return '<div class="doc-row">'+
+      '<div class="doc-box '+(checked?"checked":"")+'">'+( checked?"✓":"")+'</div>'+
+      '<div class="doc-name">'+d+'</div>'+
+    '</div>';
+  }).join("");
+
+  var feeAmt = parseFloat((fee.amount||"0").toString().replace(/,/g,""))||0;
+  var feePaid= parseFloat((fee.amountPaid||"0").toString().replace(/,/g,""))||0;
+  var feeBal = feeAmt - feePaid;
+
+  var page3 =
+    '<div class="pg page-wrap">'+
+      '<div class="amber-bar"></div>'+
+      '<div class="hdr" style="margin-bottom:14px">'+
+        '<div class="hdr-left"><div class="hdr-bee">🐝</div>'+
+          '<div><div class="hdr-school">Admission & Fee Record</div>'+
+          '<div class="hdr-sub">'+l.bbkId+' · '+l.childName+'</div></div>'+
+        '</div>'+
+      '</div>'+
+
+      // Section 4 — Admission
+      '<div class="sec">'+
+        secHead(4,"Admission Process",adm.schoolConfirmed)+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
+          ['Offer Sent','Parent Accepted','Documents Submitted','School Confirmed'].map(function(s,i){
+            var val=[adm.offerSent,adm.parentAccepted,adm.docsSubmitted,adm.schoolConfirmed][i];
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:'+(val?"#ECFDF5":"#F8FAFC")+';border:1px solid '+(val?"#BBF7D0":"#E2E8F0")+';border-radius:6px">'+
+              '<span style="width:18px;height:18px;border-radius:50%;background:'+(val?"#059669":"#E2E8F0")+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+(val?"✓":"")+'</span>'+
+              '<span style="font-size:12px;font-weight:600;color:'+(val?"#065F46":"#64748B")+'">'+s+'</span>'+
+            '</div>';
+          }).join("")+
+        '</div>'+
+      '</div>'+
+
+      // Section 5 — Documents
+      '<div class="sec">'+
+        secHead(5,"Document Checklist",adm.docsSubmitted)+
+        docRows+
+      '</div>'+
+
+      // Section 6 — Fee
+      '<div class="sec">'+
+        secHead(6,"Fee Collection",fee.done&&feeBal<=0)+
+        '<div class="fee-highlight">'+
+          '<div><div class="fee-item-lbl">Total Fee</div><div class="fee-item-val">₹'+feeAmt.toLocaleString("en-IN")+'</div></div>'+
+          '<div><div class="fee-item-lbl">Amount Paid</div><div class="fee-item-val" style="color:#059669">₹'+feePaid.toLocaleString("en-IN")+'</div></div>'+
+          '<div><div class="fee-item-lbl">Balance</div><div class="fee-item-val" style="color:'+(feeBal>0?"#DC2626":"#059669")+'">₹'+feeBal.toLocaleString("en-IN")+'</div></div>'+
+        '</div>'+
+        g3(field("Payment Plan",fee.paymentPlan), field("Payment Mode",fee.paymentMode), field("Receipt No.",fee.receiptNo))+
+        g2(field("Registration Fee","₹"+(fee.regFee||"—")), field("Payment Date",fmtD(fee.paymentDate)))+
+        field("Fee Notes",fee.notes||"—",false,true)+
+      '</div>'+
+
+      '<div class="sigs">'+
+        '<div class="sig-box">Parent / Guardian Signature</div>'+
+        '<div class="sig-box">Fee Collected By</div>'+
+        '<div class="sig-box">Official Stamp & Date</div>'+
+      '</div>'+
+    '</div>';
+
+  // ── PAGE 4: Activity Timeline ────────────────────────────────────────────
+  var log = (l.activityLog||[]).slice().reverse();
+  var tlRows = log.map(function(e,i){
+    return '<div class="tl-row">'+
+      '<div class="tl-dot-wrap">'+
+        '<div class="tl-d">'+(i+1)+'</div>'+
+        (i<log.length-1?'<div class="tl-line"></div>':'')+
+      '</div>'+
+      '<div class="tl-tl">'+
+        '<div class="tl-msg">'+e.msg+'</div>'+
+        '<div class="tl-ts">'+fmtTs(e.ts)+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+
+  var page4 =
+    '<div class="pg page-wrap">'+
+      '<div class="amber-bar"></div>'+
+      '<div class="hdr" style="margin-bottom:14px">'+
+        '<div class="hdr-left"><div class="hdr-bee">🐝</div>'+
+          '<div><div class="hdr-school">Activity Timeline</div>'+
+          '<div class="hdr-sub">'+l.bbkId+' · '+l.childName+' · Full journey log</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sec">'+
+        secHead(7,"Chronological Activity Log")+
+        (log.length?'<div class="tl">'+tlRows+'</div>':'<div style="color:#94A3B8;font-style:italic;padding:12px">No activity recorded.</div>')+
+      '</div>'+
+      '<div style="margin-top:32px;padding:10px 14px;background:#F1F5F9;border-radius:6px;font-size:10px;color:#64748B;text-align:center">'+
+        'BumbleB Kidz · Confidential Admission Record · '+l.bbkId+' · For Internal Use Only'+
+      '</div>'+
+    '</div>';
+
+  var html='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'+
+    '<title>BumbleB Kidz — '+l.childName+' — Full Admission File</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<button class="print-btn no-print" onclick="window.print()">🖨 Save as PDF</button>'+
+    page1+page2+page3+page4+
+    '</body></html>';
+
+  var blob=new Blob([html],{type:"text/html"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url; a.target="_blank"; a.rel="noopener";
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},60000);
+}
+
+
+function toggleRail(){
+  var isOpen=!document.body.classList.contains("rail-open");
+  document.body.classList.toggle("rail-open", isOpen);
+  el("rail").classList.toggle("collapsed", !isOpen);
+  el("rail-overlay").classList.toggle("show", isOpen && window.innerWidth < 900);
+}
+
 /* ═══════════════ PERSISTENCE ═══════════════ */
 var LS_KEY="bbk_crm_v7";
 
@@ -2444,6 +2826,12 @@ function lsClear(){
 
 /* ═══════════════ INIT ═══════════════ */
 if(!lsLoad()){seed();lsSave();}
+// Rail state: open on desktop, closed on mobile
+if(window.innerWidth>=900){
+  document.body.classList.add("rail-open");
+}else{
+  el("rail").classList.add("collapsed");
+}
 if(window.innerWidth>=700)setView("pipeline");
 else setView("leads");
 </script>

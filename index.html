@@ -1812,9 +1812,10 @@ function pAdmission(){
   var docsHtml='<div class="docs-list">';
   for(var i=0;i<DOC_LIST.length;i++){
     var d=DOC_LIST[i],done=!!docs[d.id];
-    docsHtml+='<label class="doc-item'+(done?" done":"")+'" onclick="toggleDoc(\''+d.id+'\')">'+
-      '<input type="checkbox"'+(done?" checked":"")+ ' style="pointer-events:none"><span class="doc-icon">'+d.icon+'</span>'+d.label+
-    '</label>';
+    docsHtml+='<div class="doc-item'+(done?" done":"")+'" data-docid="'+esc(d.id)+'">'+
+      '<span style="width:16px;height:16px;border-radius:3px;border:2px solid '+(done?'#059669':'#CBD5E1')+';background:'+(done?'#059669':'#fff')+';display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:#fff">'+(done?'✓':'')+
+      '</span><span class="doc-icon">'+d.icon+'</span>'+d.label+
+    '</div>';
   }
   docsHtml+='</div>';
 

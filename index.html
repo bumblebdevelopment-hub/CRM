@@ -1619,7 +1619,7 @@ function renderMdl(){
     if(i<STEPS.length-1)sh+='<div class="sl" style="background:'+(d?"#F59E0B":"#3F3A37")+'"></div>';
   }
   el("stepper").innerHTML=sh;
-  el("slbls").innerHTML=STEPS.map(function(s){return'<div class="slbl'+(s.key===atab?" on":"")+'">'+s.label+'</div>'}).join("");
+
 
   var srcOpts=[""].concat(SOURCES).map(function(o){return'<option value="'+esc(o)+'"'+(l.source===o?" selected":"")+">"+(o||"Select source")+"</option>"}).join("");
   var intOpts=["","Very High","High","Medium","Low"].map(function(o){return'<option value="'+esc(o)+'"'+(l.interestLevel===o?" selected":"")+">"+(o||"Select")+"</option>"}).join("");

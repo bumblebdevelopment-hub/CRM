@@ -3258,7 +3258,7 @@ function initSupabase(){
 
     _sbClient.from("bbk_crm").select("leads,lead_counter").eq("id",1).single()
       .then(function(res){
-        if(res.data&&res.data.leads&&res.data.leads.length){
+        if(res.data&&Array.isArray(res.data.leads)){
           applyLeads(res.data.leads,res.data.lead_counter);
           lsSaveLocal();
           renderView();
@@ -3288,7 +3288,7 @@ function subscribeRealtime(){
       function(payload){
         if(_suppressRemoteUpdate)return;
         var d=payload.new;
-        if(d&&d.leads&&d.leads.length){
+        if(d&&Array.isArray(d.leads)){
           applyLeads(d.leads,d.lead_counter);
           lsSaveLocal();
           renderView();

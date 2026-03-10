@@ -455,12 +455,12 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 
 /* ── UNIFIED STEPPER ─────────────────── */
 #stepper{
-  display:flex;align-items:center;
-  padding:12px 6px 8px;overflow:visible;
+  display:flex;align-items:flex-start;
+  padding:14px 8px 4px;overflow:visible;
 }
 .sn-wrap{
   display:flex;flex-direction:column;align-items:center;
-  gap:5px;flex-shrink:0;
+  gap:6px;flex-shrink:0;min-width:58px;
 }
 .sn{
   width:30px;height:30px;border-radius:50%;border:none;
@@ -469,12 +469,12 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   transition:all .15s;flex-shrink:0;
 }
 .sn-lbl{
-  font-size:9.5px;font-weight:600;color:var(--ink-4);
+  font-size:10px;font-weight:600;color:#94A3B8;
   white-space:nowrap;text-align:center;
-  transition:color .15s;
+  transition:color .15s;line-height:1.2;
 }
 .sn-lbl.on{color:var(--amber-t);font-weight:700}
-.sl{flex:1;height:2px;max-width:30px;margin-bottom:18px}
+.sl{flex:1;height:2px;max-width:36px;margin-top:15px;flex-shrink:1}
 
 #mq{
   display:flex;gap:8px;flex-wrap:wrap;
@@ -1101,7 +1101,7 @@ function genId(){
   return "BBK-"+y+"-"+pad2(pad2(leadCounter));
 }
 
-function mkO(){return{callDone:false,callDate:"",callNotes:"",waSent:false,waDate:"",visitBooked:false,visitDate:"",visitTime:"",visitDone:false,visitNotes:""}}
+function mkO(){return{callDone:false,callDate:"",callNotes:"",waSent:false,waDate:"",visitBooked:false,visitDate:"",visitTime:"",visitDone:false,visitNotes:"",motherPhone:""}}
 function mkFB(){return{done:false,receivedDate:"",formType:"",childDOB:"",address:"",motherName:"",fatherName:"",medicalNotes:"",siblingName:"",siblingDOB:""}}
 function mkC(){return{done:false,date:"",counsellorName:"",outcome:"",notes:"",screeningSlotBooked:false,screeningDate:"",screeningTime:""}}
 function mkS(){return{done:false,scheduledDate:"",scheduledTime:"",result:"",examiner:"",observations:"",scores:{},qa:{}}}
@@ -1649,7 +1649,18 @@ function renderMdl(){
 }
 
 function setAtab(k){atab=k;renderMdl()}
-function qset(path,val){setNV(cLead,path,val);cLead.stage=deriveStage(cLead);renderMdl()}
+function qset(path,val){
+  setNV(cLead,path,val);
+  // Auto-sync: when parentName set, also reflect in header
+  if(path==="childName"){cLead.childName=val;}
+  if(path==="firstBuzz.fatherName"){
+    cLead.firstBuzz.fatherName=val;
+    // Use father name as parentName if parentName empty
+    if(!cLead.parentName)cLead.parentName=val;
+  }
+  cLead.stage=deriveStage(cLead);
+  renderMdl();
+}
 
 /* ═══════════════ PANEL BUILDERS ═══════════════ */
 function fld(lbl,path,val,type,ph){
@@ -1669,9 +1680,14 @@ function g2(a,b){return'<div class="g2">'+a+b+'</div>'}
 
 /* ── OUTREACH PANEL ── */
 function pOutreach(){
-  var o=cLead.outreach;
+  var o=cLead.outreach,l=cLead,fb=cLead.firstBuzz;
   var rdy=o.callDone&&o.waSent&&o.visitBooked;
-  return sh2("📞 Step 1 — Call the Lead")+
+  return sh2("👤 Family Details")+
+    '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:9px 13px;font-size:12px;color:#1D4ED8;font-weight:600;margin-bottom:12px">ℹ These details auto-fill into The First Buzz form.</div>'+
+    g2(fld("Child's Full Name","childName",l.childName,"text","e.g. Aarav Kansara"),fld("Child's Age","childAge",l.childAge,"text","e.g. 4.5 yrs"))+
+    g2(fld("Father's Name","firstBuzz.fatherName",fb.fatherName,"text","Full name"),fld("Father's Mobile","phone",l.phone,"text","10-digit number"))+
+    g2(fld("Mother's Name","firstBuzz.motherName",fb.motherName,"text","Full name"),fld("Mother's Mobile","outreach.motherPhone",o.motherPhone||"","text","10-digit number (optional)"))+
+    sh2("📞 Step 1 — Call the Lead")+
     g2(sfld("Call Status","outreach.callDone",o.callDone,[{v:false,l:"Not Called Yet"},{v:true,l:"Called ✓"}]),
        fld("Call Date","outreach.callDate",o.callDate,"date",""))+
     fld("Call Notes","outreach.callNotes",o.callNotes,"textarea","What was discussed, objections, questions…")+
@@ -1703,6 +1719,7 @@ function pFirstBuzz(){
   var ftOpts=[{v:"",l:"Select form type"}].concat(FORM_TYPES.map(function(t){return{v:t,l:t}}));
 
   return sh2("🐝 The First Buzz — Application Form")+
+    '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:9px;padding:9px 13px;font-size:12px;color:#15803D;font-weight:600;margin-bottom:12px">✅ Child and parent names entered in Outreach appear here automatically.</div>'+
     '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#FCD34D;font-weight:600">📋 Collect the appropriate First Buzz form based on the program. Hand over / send the PDF form to the parents.</div>'+
     g2(sfld("Form Type","firstBuzz.formType",fb.formType,ftOpts),
        fld("Date Received","firstBuzz.receivedDate",fb.receivedDate,"date",""))+

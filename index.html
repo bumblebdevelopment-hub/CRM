@@ -809,9 +809,113 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   width:6px;height:6px;border-radius:50%;
   background:var(--red);flex-shrink:0;
 }
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#login-screen{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,#0A2540 0%,#0F3460 60%,#0A2540 100%);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+  padding:20px;
+}
+#login-screen.hidden{display:none}
+.login-card{
+  background:#fff;border-radius:20px;
+  width:100%;max-width:400px;
+  padding:40px 36px 36px;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  animation:mIn .3s cubic-bezier(.16,1,.3,1) both;
+}
+.login-bee{
+  width:64px;height:64px;background:#F59E0B;
+  border-radius:16px;display:flex;align-items:center;
+  justify-content:center;font-size:32px;
+  margin:0 auto 16px;
+  box-shadow:0 8px 24px rgba(245,158,11,.35);
+}
+.login-title{
+  text-align:center;font-size:22px;font-weight:800;
+  color:#0A2540;letter-spacing:-.4px;margin-bottom:4px;
+}
+.login-sub{
+  text-align:center;font-size:13px;color:#64748B;
+  font-weight:400;margin-bottom:28px;
+}
+.login-lbl{
+  display:block;font-size:11px;font-weight:700;
+  color:#64748B;text-transform:uppercase;letter-spacing:.6px;
+  margin-bottom:6px;margin-top:16px;
+}
+.login-lbl:first-of-type{margin-top:0}
+.login-inp{
+  width:100%;border:1.5px solid #E2E8F0;border-radius:10px;
+  padding:11px 14px;font-size:15px;font-family:inherit;
+  color:#0F172A;background:#F8FAFC;outline:none;
+  box-sizing:border-box;transition:border-color .15s,box-shadow .15s;
+}
+.login-inp:focus{
+  border-color:#F59E0B;background:#fff;
+  box-shadow:0 0 0 3px rgba(245,158,11,.15);
+}
+.login-btn{
+  width:100%;margin-top:24px;padding:13px;
+  background:#F59E0B;border:none;border-radius:10px;
+  color:#fff;font-size:15px;font-weight:700;
+  font-family:inherit;cursor:pointer;
+  transition:background .15s,transform .1s;
+  box-shadow:0 4px 14px rgba(245,158,11,.4);
+}
+.login-btn:hover{background:#D97706}
+.login-btn:active{transform:scale(.98)}
+.login-err{
+  margin-top:12px;padding:10px 14px;
+  background:#FEF2F2;border:1px solid #FECACA;
+  border-radius:8px;color:#DC2626;
+  font-size:13px;font-weight:600;text-align:center;
+  display:none;
+}
+.login-err.show{display:block}
+.login-footer{
+  text-align:center;margin-top:20px;
+  font-size:11px;color:#94A3B8;
+}
+.pw-wrap{position:relative}
+.pw-toggle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  font-size:16px;color:#94A3B8;padding:0;line-height:1;
+}
+
 </style>
 </head>
 <body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-bee">🐝</div>
+    <div class="login-title">BumbleB Kidz</div>
+    <div class="login-sub">Admissions CRM — Staff Access Only</div>
+
+    <label class="login-lbl">Username</label>
+    <input class="login-inp" id="l-user" type="text" placeholder="Enter username" autocomplete="username" spellcheck="false"/>
+
+    <label class="login-lbl">Password</label>
+    <div class="pw-wrap">
+      <input class="login-inp" id="l-pass" type="password" placeholder="Enter password" autocomplete="current-password"/>
+      <button class="pw-toggle" id="pw-eye" onclick="togglePw()" tabindex="-1">👁</button>
+    </div>
+
+    <div class="login-err" id="l-err">Incorrect username or password. Please try again.</div>
+
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+
+    <div class="login-footer">BumbleB Kidz · Admissions System · Confidential</div>
+  </div>
+</div>
+
+
 
 <!-- ═══ RAIL ════════════════════════════ -->
 <div id="rail-overlay" onclick="toggleRail()"></div>
@@ -3183,6 +3287,52 @@ function importBackup(){
   };
   inp.click();
 }
+
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+var LOGIN_KEY="bbk_auth_v1";
+var CREDS={id:"BumbleB Kidz",pw:"BumbleB@kidz"};
+
+function checkAuth(){
+  try{
+    var s=sessionStorage.getItem(LOGIN_KEY);
+    return s==="1";
+  }catch(e){return false;}
+}
+function doLogin(){
+  var u=document.getElementById("l-user").value.trim();
+  var p=document.getElementById("l-pass").value;
+  var err=document.getElementById("l-err");
+  if(u===CREDS.id&&p===CREDS.pw){
+    try{sessionStorage.setItem(LOGIN_KEY,"1");}catch(e){}
+    document.getElementById("login-screen").classList.add("hidden");
+    err.classList.remove("show");
+  } else {
+    err.classList.add("show");
+    document.getElementById("l-pass").value="";
+    document.getElementById("l-pass").focus();
+  }
+}
+function togglePw(){
+  var inp=document.getElementById("l-pass");
+  var eye=document.getElementById("pw-eye");
+  if(inp.type==="password"){inp.type="text";eye.textContent="🙈";}
+  else{inp.type="password";eye.textContent="👁";}
+}
+// Enter key submits
+document.addEventListener("DOMContentLoaded",function(){
+  ["l-user","l-pass"].forEach(function(id){
+    var el2=document.getElementById(id);
+    if(el2)el2.addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
+  });
+  // Show CRM or login
+  if(checkAuth()){
+    document.getElementById("login-screen").classList.add("hidden");
+  }
+});
+
 
 /* ═══════════════ INIT ═══════════════ */
 if(!lsLoad()){seed();lsSave();}

@@ -72,7 +72,7 @@
 }
 
 html,body{height:100%;overflow:hidden}
-body{font-family:var(--font);background:var(--bg);color:var(--ink-1);-webkit-font-smoothing:antialiased;display:flex;font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--ink-1);-webkit-font-smoothing:antialiased;display:flex;font-size:15px}
 input,select,textarea,button{font-family:inherit}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
@@ -416,7 +416,7 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 #modal-overlay.open{display:flex}
 #modal{
   background:var(--surface);border-radius:14px;
-  width:100%;max-width:550px;max-height:88vh;
+  width:100%;max-width:700px;max-height:92vh;
   display:flex;flex-direction:column;overflow:hidden;
   box-shadow:var(--shadow-modal);
   border:1px solid var(--line);
@@ -436,8 +436,8 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   font-size:13px;font-weight:700;color:#fff;flex-shrink:0;
 }
 .mh-info{flex:1;min-width:0}
-.mh-name{font-size:15px;font-weight:800;color:var(--ink-1);letter-spacing:-.3px}
-.mh-sub{font-size:12px;color:var(--ink-3);margin-top:2px;font-weight:400}
+.mh-name{font-size:16px;font-weight:800;color:var(--ink-1);letter-spacing:-.3px}
+.mh-sub{font-size:13px;color:var(--ink-3);margin-top:2px;font-weight:400}
 .mh-bbk{
   font-size:10px;font-weight:600;color:var(--ink-4);
   background:var(--bg);border:1px solid var(--line);
@@ -453,17 +453,17 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 }
 #mh-close:hover{background:var(--line);color:var(--ink-1)}
 
-#stepper{display:flex;align-items:center;gap:3px;padding:11px 0 0}
+#stepper{display:flex;align-items:center;gap:4px;padding:12px 4px 0;overflow:visible}
 .sn{
-  width:22px;height:22px;border-radius:50%;border:none;
-  cursor:pointer;font-size:8.5px;
+  width:28px;height:28px;border-radius:50%;border:none;
+  cursor:pointer;font-size:11px;
   display:flex;align-items:center;justify-content:center;
   transition:all .15s;flex-shrink:0;
 }
-.sl{flex:1;height:1px;max-width:20px}
+.sl{flex:1;height:2px;max-width:28px}
 .slbls{display:flex;overflow-x:auto;scrollbar-width:none;padding-bottom:10px}
 .slbls::-webkit-scrollbar{display:none}
-.slbl{font-size:8px;font-weight:600;color:var(--ink-4);flex:1;text-align:center;white-space:nowrap;min-width:44px}
+.slbl{font-size:10px;font-weight:600;color:var(--ink-4);flex:1;text-align:center;white-space:nowrap;min-width:52px}
 .slbl.on{color:var(--amber-t);font-weight:700}
 
 #mq{
@@ -475,10 +475,10 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   flex-shrink:0;
 }
 .qf{display:flex;flex-direction:column;gap:3px;flex:1;min-width:100px}
-.ql{font-size:9.5px;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.6px}
+.ql{font-size:11px;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.6px}
 .qs,.qi{
   border:1px solid var(--line);border-radius:6px;
-  padding:6px 10px;font-size:13px;font-weight:400;
+  padding:7px 11px;font-size:14px;font-weight:400;
   color:var(--ink-1);background:var(--surface);outline:none;
   transition:border-color .12s,box-shadow .12s;
 }
@@ -492,7 +492,7 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 #atabs::-webkit-scrollbar{display:none}
 .atab{
   border:none;background:transparent;
-  padding:9px 12px;font-size:12px;font-weight:500;
+  padding:10px 14px;font-size:13px;font-weight:500;
   cursor:pointer;white-space:nowrap;
   border-bottom:2px solid transparent;
   color:var(--ink-3);transition:color .12s;flex-shrink:0;
@@ -515,20 +515,20 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 #save-btn{
   flex:1;background:var(--amber);border:1px solid var(--amber-h);
   border-radius:var(--r-md);color:#fff;font-weight:700;
-  font-size:13px;padding:10px;cursor:pointer;transition:background .12s;
+  font-size:14px;padding:12px;cursor:pointer;transition:background .12s;
 }
 #save-btn:hover{background:var(--amber-h)}
 #cancel-btn{
   background:var(--surface);border:1px solid var(--line);
   border-radius:var(--r-md);color:var(--ink-2);
-  font-weight:500;font-size:13px;
-  padding:10px 16px;cursor:pointer;transition:all .12s;
+  font-weight:500;font-size:14px;
+  padding:12px 18px;cursor:pointer;transition:all .12s;
 }
 #cancel-btn:hover{background:var(--bg);color:var(--ink-1)}
 
 /* ── FORM ────────────────────────────── */
 .sh{
-  font-size:9.5px;font-weight:700;color:var(--ink-3);
+  font-size:10.5px;font-weight:700;color:var(--ink-3);
   margin:16px 0 9px;padding-bottom:8px;
   border-bottom:1px solid var(--line);
   text-transform:uppercase;letter-spacing:.8px;
@@ -537,7 +537,7 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 .sh::before{content:'';display:inline-block;width:2px;height:10px;border-radius:1px;background:var(--amber);flex-shrink:0}
 .sh:first-child{margin-top:0}
 .fld{margin-bottom:10px}
-.fld label{display:block;font-size:10.5px;font-weight:600;color:var(--ink-3);margin-bottom:4px;letter-spacing:.1px}
+.fld label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:4px;letter-spacing:.1px}
 .fld input,.fld select,.fld textarea{
   width:100%;border:1px solid var(--line);border-radius:var(--r-md);
   padding:8px 11px;font-size:13px;font-weight:400;
@@ -653,6 +653,21 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   .dash-row{grid-template-columns:1fr}
   #content{padding:14px}
 }
+
+
+/* ── DISCOVERY FLIGHT DETAIL FORM ─────────────── */
+.sc-section{margin-bottom:14px}
+.sc-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:7px;background:#F8FAFC;border:1px solid #E2E8F0;margin-bottom:5px;gap:8px}
+.sc-row:hover{background:#F1F5F9}
+.sc-lbl{font-size:13.5px;font-weight:500;color:#0F172A;flex:1;line-height:1.4}
+.sc-btns{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.sc-btn{padding:5px 12px;border-radius:5px;border:1.5px solid #E2E8F0;background:#fff;font-size:12.5px;font-weight:600;color:#64748B;cursor:pointer;transition:all .12s;white-space:nowrap}
+.sc-btn:hover{border-color:#94A3B8;color:#334155}
+.sc-btn.sc-active{box-shadow:inset 0 0 0 1px currentColor}
+.sc-info{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:9px 13px;font-size:12px;color:#1D4ED8;font-weight:600;margin-bottom:12px}
+.sc-decision{display:flex;align-items:center;gap:12px;padding:12px;background:#F1F5F9;border-radius:8px;margin-top:4px}
+.sc-ready-yes{background:#ECFDF5!important;color:#059669!important;border-color:#059669!important;font-size:14px!important;padding:8px 22px!important;font-weight:700!important}
+.sc-ready-no{background:#FEF2F2!important;color:#DC2626!important;border-color:#DC2626!important;font-size:14px!important;padding:8px 22px!important;font-weight:700!important}
 
 /* ── TODAY VIEW ───────────────────────────────────────────────── */
 .today-section{margin-bottom:20px}
@@ -857,9 +872,22 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 1h-.5C3.12 1 2 2.12 2 3.5c0 5.8 4.7 10.5 10.5 10.5C13.88 14 15 12.88 15 11.5V11l-3-1.5-1 1c-.83-.33-2.17-1.67-2.5-2.5l1-1L8 4H5Z" stroke="currentColor" stroke-width="1.4" opacity=".7"/></svg>
       <span class="rail-link-lbl">Call Script</span>
     </button>
-    <button class="rail-link" onclick="lsClear()" style="opacity:.5">
+    <div class="rail-sep"></div>
+    <button class="rail-link" onclick="exportCSV()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.4" opacity=".7"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".7"/></svg>
+      <span class="rail-link-lbl">Export CSV</span>
+    </button>
+    <button class="rail-link" onclick="exportBackup()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 4 3-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".7"/></svg>
+      <span class="rail-link-lbl">Save Backup (.json)</span>
+    </button>
+    <button class="rail-link" onclick="importBackup()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M5 7l3-4 3 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".7"/></svg>
+      <span class="rail-link-lbl">Restore Backup</span>
+    </button>
+    <button class="rail-link" onclick="lsClear()" style="opacity:.35;margin-top:2px">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
-      <span class="rail-link-lbl">Reset to demo data</span>
+      <span class="rail-link-lbl">Reset data</span>
     </button>
   </div>
 </aside>
@@ -881,6 +909,10 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 
     <div class="bar-right">
       <span class="lcount" id="lead-count"></span>
+      <button class="btn btn-ghost" onclick="exportCSV()" title="Download all leads as spreadsheet">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Export CSV
+      </button>
       <button class="btn btn-ghost" onclick="openScript('wa')">WA Templates</button>
       <button class="btn btn-ghost" onclick="downloadFullProfile(leads[0])" title="Download full admission file">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -1063,7 +1095,7 @@ function genId(){
 function mkO(){return{callDone:false,callDate:"",callNotes:"",waSent:false,waDate:"",visitBooked:false,visitDate:"",visitTime:"",visitDone:false,visitNotes:""}}
 function mkFB(){return{done:false,receivedDate:"",formType:"",childDOB:"",address:"",motherName:"",fatherName:"",medicalNotes:"",siblingName:"",siblingDOB:""}}
 function mkC(){return{done:false,date:"",counsellorName:"",outcome:"",notes:"",screeningSlotBooked:false,screeningDate:"",screeningTime:""}}
-function mkS(){return{done:false,scheduledDate:"",scheduledTime:"",result:"",examiner:"",observations:"",scores:{}}}
+function mkS(){return{done:false,scheduledDate:"",scheduledTime:"",result:"",examiner:"",observations:"",scores:{},qa:{}}}
 function mkAdm(){return{done:false,formType:"",offerSent:false,parentAccepted:false,docsSubmitted:false,schoolConfirmed:false,docs:{}}}
 function mkFee(){return{done:false,program:"",paymentPlan:"",regFee:"",amount:"",amountPaid:"",paymentMode:"",receiptNo:"",paymentDate:"",notes:""}}
 
@@ -1745,6 +1777,11 @@ function pScreening(){
     sh2("📊 Assessment Result")+
     sfld("Result","screening.result",s.result,[{v:"",l:"Select result"},"Ready for admission","Ready with conditions","Not admissible"])+
     rb+
+    sh2("📋 Discovery Flight — Detailed Assessment")+
+    pDiscoveryFlight(cLead.program||"")+
+    sh2("📊 Overall Assessment Result")+
+    sfld("Result","screening.result",s.result,[{v:"",l:"Select result"},"Ready for admission","Ready with conditions","Not admissible"])+
+    rb+
     fld("Examiner Observations","screening.observations",s.observations,"textarea","Child's behaviour, responses, strengths, areas of support…")+
     ck("Screening completed and result recorded","screening.done",s.done)+
     (s.done?tdone("Screening completed ✓"):"")+
@@ -1910,10 +1947,28 @@ function renderPanel(){
   cks.forEach(function(c){
     c.addEventListener("change",function(){qset(c.dataset.p,c.type==="checkbox"?c.checked:c.value)});
   });
-  // wire score buttons (data-domain + data-opt)
+  // wire score buttons (data-domain + data-opt) - legacy
   var sbs=el("mpanel").querySelectorAll(".score-btn");
   sbs.forEach(function(b){
     b.addEventListener("click",function(){setScore(b.dataset.domain,b.dataset.opt);});
+  });
+  // wire Discovery Flight qa buttons (data-qa + data-qaopt)
+  var qabs=el("mpanel").querySelectorAll("[data-qa][data-qaopt]");
+  qabs.forEach(function(b){
+    b.addEventListener("click",function(){
+      if(!cLead.screening.qa)cLead.screening.qa={};
+      var k=b.dataset.qa,v=b.dataset.qaopt;
+      cLead.screening.qa[k]=cLead.screening.qa[k]===v?"":v;
+      renderPanel();
+    });
+  });
+  // wire Discovery Flight qa text inputs (data-qa without data-qaopt)
+  var qatxts=el("mpanel").querySelectorAll("[data-qa]:not([data-qaopt])");
+  qatxts.forEach(function(inp){
+    inp.addEventListener("change",function(){
+      if(!cLead.screening.qa)cLead.screening.qa={};
+      cLead.screening.qa[inp.dataset.qa]=inp.value;
+    });
   });
 }
 
@@ -2160,26 +2215,242 @@ function rSeatCapacity(){
 /* ════════════════════════════════════════════════════════════════
    FEATURE 5 — DIGITAL SCREENING SCORECARD
 ════════════════════════════════════════════════════════════════ */
-function pScorecard(prog){
-  var domains=SCREEN_DOMAINS[prog]||SCREEN_DOMAINS["Pre-K"];
-  var scores=cLead.screening.scores||{};
-  var out='<div class="scorecard">';
-  domains.forEach(function(d){
-    var cur=scores[d]||"";
-    out+='<div class="scorecard-row">'+
-      '<div class="scorecard-domain">'+esc(d)+'</div>'+
-      '<div class="score-opts">';
-    SCORE_OPTS.forEach(function(opt){
-      var isSel=cur===opt;
-      var bg=isSel?("background:"+SCORE_COL[opt]+";border-color:transparent;color:#fff;"):"";
-      var sel=isSel?" sel":"";
-      out+='<button class="score-btn'+sel+'" style="'+bg+'" data-domain="'+esc(d)+'" data-opt="'+esc(opt)+'">'+opt+'</button>';
-    });
-    out+='</div></div>';
-  });
-  out+='</div>';
+function pDiscoveryFlight(prog){
+  if(!cLead.screening.qa)cLead.screening.qa={};
+  var qa=cLead.screening.qa;
+
+  /* helpers */
+  function scBtn(key,opt,label,col,bg){
+    var active=qa[key]===opt;
+    var sty=active?"background:"+bg+";color:"+col+";border-color:"+col:"";
+    return'<button class="sc-btn'+(active?" sc-active":"")+'" style="'+sty+'" data-qa="'+key+'" data-qaopt="'+opt+'">'+label+'</button>';
+  }
+  function scoreRow(lbl,key){
+    var SCOL={EP:"#059669",GP:"#2563EB",SP:"#D97706",NP:"#DC2626",ND:"#94A3B8"};
+    var SBG={EP:"#ECFDF5",GP:"#EFF6FF",SP:"#FFFBEB",NP:"#FEF2F2",ND:"#F1F5F9"};
+    var btns=["EP","GP","SP","NP","ND"].map(function(o){return scBtn(key,o,o,SCOL[o],SBG[o]);}).join("");
+    return'<div class="sc-row"><span class="sc-lbl">'+lbl+'</span><div class="sc-btns">'+btns+'</div></div>';
+  }
+  function ynRow(lbl,key){
+    return'<div class="sc-row"><span class="sc-lbl">'+lbl+'</span><div class="sc-btns">'+
+      scBtn(key,"Yes","Yes","#059669","#ECFDF5")+
+      scBtn(key,"No","No","#DC2626","#FEF2F2")+
+    '</div></div>';
+  }
+  function mcRow(lbl,key,opts){
+    var btns=opts.map(function(o){return scBtn(key,o,o,"#0A2540","#EFF6FF");}).join("");
+    return'<div class="sc-row"><span class="sc-lbl">'+lbl+'</span><div class="sc-btns">'+btns+'</div></div>';
+  }
+  function qaFld(lbl,key,ph){
+    return'<div class="fld"><label>'+lbl+'</label><input type="text" data-qa="'+key+'" value="'+esc(qa[key]||"")+'" placeholder="'+(ph||"")+'"/></div>';
+  }
+  function ready(lbl,key){
+    return'<div class="sc-decision">'+
+      '<span style="font-weight:700;font-size:13px;color:#0F172A">'+lbl+'</span>'+
+      scBtn(key,"Yes","Yes","#059669","#ECFDF5")+
+      scBtn(key,"No","No","#DC2626","#FEF2F2")+
+    '</div>';
+  }
+
+  var out="";
+
+  /* ─── PlayHouse / Todd Care ─────────────────────── */
+  if(prog==="PlayHouse (PH)"||prog==="Todd Care"){
+    out='<div class="sc-info">📋 Discovery Flight — PlayHouse</div>'+
+      sh2("👁 General Observation")+
+      ynRow("1. Clings to the Parent","ph.gen.clings")+
+      ynRow("2. Concentration in the task","ph.gen.concentration")+
+      ynRow("3. Cries when he/she arrives","ph.gen.cries")+
+      ynRow("4. Comfortable in the environment","ph.gen.comfortable")+
+      mcRow("5. Activity Level","ph.gen.activity",["Good","Fair","Passive"])+
+      sh2("🏃 Gross Motor")+
+      scoreRow("1. Climbs up & down on slides","ph.gross.slides")+
+      scoreRow("2. Stands on one foot up to 3 counts","ph.gross.one_foot")+
+      scoreRow("3. Catches and throws a ball","ph.gross.ball")+
+      scoreRow("4. Jumps at place","ph.gross.jumps")+
+      sh2("✋ Fine Motor")+
+      scoreRow("1. Strings beads","ph.fine.beads")+
+      scoreRow("2. Scribbles on paper / slate","ph.fine.scribbles")+
+      scoreRow("3. Builds a tower with 4 to 6 cubes","ph.fine.tower")+
+      scoreRow("4. Picks up small objects","ph.fine.picks")+
+      scoreRow("5. Plays with fixing toys","ph.fine.fixing_toys")+
+      scoreRow("6. Holds a crayon / chalk stick","ph.fine.crayon")+
+      sh2("💬 Language Development")+
+      ynRow("1. Uses gestures","ph.lang.gestures")+
+      ynRow("2. Speaks clearly","ph.lang.speaks_clearly")+
+      ynRow("3. Speaks in words","ph.lang.speaks_words")+
+      ynRow("4. Names objects","ph.lang.names_objects")+
+      scoreRow("5. Knows fruits (any 3)","ph.lang.fruits")+
+      scoreRow("6. Knows vegetables (any 3)","ph.lang.vegetables")+
+      scoreRow("7. Knows animals (any 3)","ph.lang.animals")+
+      qaFld("8. How do you celebrate your birthday?","ph.lang.birthday","")+
+      qaFld("9. Sings rhymes (write rhyme name)","ph.lang.rhymes","")+
+      sh2("🧠 Cognitive Development")+
+      scoreRow("1. Works on knobbed puzzle","ph.cog.puzzle")+
+      scoreRow("2. Knows colours (Red / Yellow / Green / Blue)","ph.cog.colours")+
+      ynRow("3. Understands concept big and small","ph.cog.big_small")+
+      ynRow("4. Give me one bead / block / crayon","ph.cog.one_bead")+
+      ynRow("5. Give me two beads / blocks / crayons","ph.cog.two_beads")+
+      sh2("✏️ Pre-Writing Skills")+
+      ynRow("Pre-Writing Skills demonstrated","ph.prewriting")+
+      sh2("👨‍👩‍👧 Parental Input")+
+      ynRow("1. Toilet trained","ph.parent.toilet")+
+      ynRow("2. Eats by self","ph.parent.eats_self")+
+      ynRow("3. Uses diapers","ph.parent.diapers")+
+      ready("The Child is ready for PlayHouse:","ph.ready");
+  }
+
+  /* ─── PreK ──────────────────────────────────────── */
+  else if(prog==="Pre-Kindergarten (PreK)"||prog==="Pre-K"){
+    out='<div class="sc-info">📋 Discovery Flight — PreK</div>'+
+      sh2("👁 General Observation")+
+      ynRow("1. Clings to the Parents","prek.gen.clings")+
+      ynRow("2. Concentration in the task","prek.gen.concentration")+
+      mcRow("3. Activity Level","prek.gen.activity",["Good","Fair","Passive"])+
+      sh2("🧩 General Knowledge")+
+      scoreRow("1. Identifies / Names Body Parts (any 5)","prek.gk.body_parts")+
+      scoreRow("2. Identifies / Names Fruits (any 5)","prek.gk.fruits")+
+      scoreRow("3. Identifies / Names Animals (any 5)","prek.gk.animals")+
+      scoreRow("4. Identifies / Names Vehicles (any 5)","prek.gk.vehicles")+
+      sh2("🏃 Gross Motor")+
+      scoreRow("1. Climbs up stairs up & down","prek.gross.stairs")+
+      scoreRow("2. Stands on one foot up to 5 counts","prek.gross.one_foot")+
+      scoreRow("3. Hops forward","prek.gross.hops")+
+      scoreRow("4. Catches and throws a ball","prek.gross.ball")+
+      scoreRow("5. Jumps at place","prek.gross.jumps")+
+      sh2("✋ Fine Motor")+
+      scoreRow("1. Strings beads","prek.fine.beads")+
+      scoreRow("2. Scribbles on paper / slate","prek.fine.scribbles")+
+      scoreRow("3. Builds a tower with 6 to 8 cubes","prek.fine.tower")+
+      scoreRow("4. Picks up small objects","prek.fine.picks")+
+      scoreRow("5. Holds a pencil","prek.fine.pencil")+
+      sh2("💬 Language Development")+
+      scoreRow("1. Speaks clearly","prek.lang.speaks_clearly")+
+      scoreRow("2. Speaks in words / sentences","prek.lang.speaks_sentences")+
+      scoreRow("3. Names objects","prek.lang.names_objects")+
+      scoreRow("4. Listens & follows instructions","prek.lang.follows_instructions")+
+      qaFld("5. How do you celebrate your birthday?","prek.lang.birthday","")+
+      qaFld("6. What do you do on Sunday / holiday?","prek.lang.sunday","")+
+      qaFld("7. Sings rhymes (write rhyme name)","prek.lang.rhymes","")+
+      sh2("🧠 Cognitive Development")+
+      scoreRow("1. Puts together 5–6 piece puzzles","prek.cog.puzzle")+
+      scoreRow("2. Knows colours (R/Y/G/B)","prek.cog.colours")+
+      scoreRow("3. Knows shapes (circle / square / triangle)","prek.cog.shapes")+
+      scoreRow("4. Matches the colours","prek.cog.matches")+
+      sh2("🔢 Number Concepts")+
+      ynRow("1. Understands concepts big and small","prek.num.big_small")+
+      ynRow("2. Count the stars (can count 3)","prek.num.count_stars")+
+      ynRow("3. Give me two beads / blocks / crayons","prek.num.two_beads")+
+      sh2("✏️ Pre-Writing Skills")+
+      ynRow("1. Draws horizontal lines","prek.pre.horizontal")+
+      ynRow("2. Draws vertical lines","prek.pre.vertical")+
+      ynRow("3. Can copy a circle","prek.pre.circle")+
+      ready("The Child is ready for PreK:","prek.ready");
+  }
+
+  /* ─── K1 ─────────────────────────────────────────── */
+  else if(prog==="Kindergarten 1 (K1)"){
+    out='<div class="sc-info">📋 Discovery Flight — K1</div>'+
+      sh2("🧩 General Knowledge")+
+      scoreRow("1. Identifies body parts & related info","k1.gk.body_parts")+
+      '  <div style="font-size:11px;color:#64748B;padding:0 10px 6px">Nose · Neck · Thumb · Tongue · Ears · Legs · Hands · Face · Eyes · Stomach</div>'+
+      scoreRow("2. Names fruits","k1.gk.fruits")+
+      scoreRow("3. Names vegetables","k1.gk.vegetables")+
+      scoreRow("4. Names vehicles","k1.gk.vehicles")+
+      scoreRow("5. Names common animals","k1.gk.animals")+
+      scoreRow("6. Names upper case letters","k1.gk.upper_case")+
+      '  <div style="font-size:11px;color:#64748B;font-family:monospace;padding:0 10px 6px">A D C P M T S R F H G J K L</div>'+
+      scoreRow("7. Names lower case letters","k1.gk.lower_case")+
+      '  <div style="font-size:11px;color:#64748B;font-family:monospace;padding:0 10px 6px">b k g o t f d p m n w x e j</div>'+
+      sh2("🏃 Gross Motor")+
+      scoreRow("1. Walks tiptoes","k1.gross.tiptoes")+
+      scoreRow("2. Stands on one foot up to 5 counts","k1.gross.one_foot")+
+      scoreRow("3. Cross walk","k1.gross.cross_walk")+
+      scoreRow("4. Catches and throws a ball","k1.gross.ball")+
+      sh2("✋ Fine Motor")+
+      scoreRow("1. Strings beads","k1.fine.beads")+
+      scoreRow("2. Builds a tower with 6 to 8 cubes","k1.fine.tower")+
+      scoreRow("3. Holds a pencil","k1.fine.pencil")+
+      scoreRow("4. Colours an object","k1.fine.colours_object")+
+      sh2("💬 Language Development")+
+      scoreRow("1. Speaks in words / sentences","k1.lang.speaks_sentences")+
+      scoreRow("2. Names objects & tells their use","k1.lang.names_objects_use")+
+      '  <div style="font-size:11px;color:#64748B;padding:0 10px 6px">Mobile · Glass · Pencil · Key · Book</div>'+
+      scoreRow("3. Listens & follows 2-step directions","k1.lang.follows_2step")+
+      qaFld("4. How do you celebrate your birthday?","k1.lang.birthday","")+
+      qaFld("5. What do you do on Sunday / holiday?","k1.lang.sunday","")+
+      sh2("🧠 Cognitive Development")+
+      scoreRow("1. Puts together 5–6 piece puzzles","k1.cog.puzzle")+
+      scoreRow("2. Knows colours","k1.cog.colours")+
+      '  <div style="font-size:11px;color:#64748B;padding:0 10px 6px">red · yellow · green · blue · pink · orange · black</div>'+
+      scoreRow("3. Knows shapes","k1.cog.shapes")+
+      '  <div style="font-size:11px;color:#64748B;padding:0 10px 6px">circle · square · triangle · rectangle · semicircle</div>'+
+      scoreRow("4. Knows days of the week","k1.cog.days_week")+
+      scoreRow("5. Matches objects by colours / shapes","k1.cog.matches")+
+      sh2("🔢 Number Concepts")+
+      scoreRow("1. Counts objects up to 9","k1.num.counts_9")+
+      scoreRow("2. Knows numbers up to","k1.num.knows_numbers")+
+      scoreRow("3. Associates number of objects with numerals","k1.num.associates")+
+      scoreRow("4. Rote counting 1 to 20","k1.num.rote_counting")+
+      sh2("✍️ Writing Skills")+
+      scoreRow("1. Copies shapes (circle / square / triangle)","k1.write.copies_shapes")+
+      scoreRow("2. Writes numbers 1 to 10","k1.write.numbers_1_10")+
+      sh2("👁 Visual Perception")+
+      ynRow("1. What can you see? (identifies objects in picture)","k1.visual.see")+
+      ynRow("2. Odd one out? (identifies different item)","k1.visual.odd_one")+
+      ready("The Child is ready for K1:","k1.ready");
+  }
+
+  /* ─── K2 ─────────────────────────────────────────── */
+  else if(prog==="Kindergarten 2 (K2)"){
+    out='<div class="sc-info">📋 Discovery Flight — K2</div>'+
+      sh2("🧩 General Knowledge")+
+      scoreRow("1. Identifies body parts & related info","k2.gk.body_parts")+
+      scoreRow("2. Names vegetables","k2.gk.vegetables")+
+      scoreRow("3. Names animals","k2.gk.animals")+
+      scoreRow("4. Names vehicles","k2.gk.vehicles")+
+      scoreRow("5. Names colours","k2.gk.colours")+
+      scoreRow("6. Names shapes","k2.gk.shapes")+
+      scoreRow("7. Knows days of the week","k2.gk.days_week")+
+      sh2("🏃 Gross Motor")+
+      ynRow("1. Walks backward","k2.gross.walks_backward")+
+      ynRow("2. Stands on one foot with arms folded","k2.gross.one_foot_arms")+
+      ynRow("3. Catches and throws a ball","k2.gross.ball")+
+      sh2("✋ Fine Motor")+
+      ynRow("1. Cuts paper with scissors","k2.fine.scissors")+
+      ynRow("2. Holds a pencil / crayon","k2.fine.pencil")+
+      ynRow("3. Clamps clothes pins","k2.fine.clothes_pins")+
+      sh2("💬 Language Development")+
+      scoreRow("1. Speaks in words / sentences","k2.lang.speaks_sentences")+
+      scoreRow("2. Names objects & tells their use","k2.lang.names_objects_use")+
+      '  <div style="font-size:11px;color:#64748B;padding:0 10px 6px">Mobile · Glass · Pencil · Key · Book</div>'+
+      scoreRow("3. Listens & follows 2-step directions","k2.lang.follows_2step")+
+      qaFld("4. How do you celebrate your birthday?","k2.lang.birthday","")+
+      qaFld("5. What do you do on Sunday / holiday?","k2.lang.sunday","")+
+      scoreRow("6. Reads & writes lower case letters a to z","k2.lang.reads_az")+
+      sh2("🧠 Cognitive Development")+
+      ynRow("1. Puts together 8–10 piece puzzles","k2.cog.puzzle")+
+      ynRow("2. Matches objects by colours / shapes","k2.cog.matches")+
+      sh2("🔢 Number Concepts")+
+      scoreRow("1. Knows & writes numbers up to 20","k2.num.writes_20")+
+      scoreRow("2. Rote counting 1 to 30","k2.num.rote_30")+
+      scoreRow("3. Count objects up to 20","k2.num.count_20")+
+      sh2("✍️ Writing Skills")+
+      mcRow("1. Writes a to z","k2.write.az",["EP","GP","SP"])+
+      mcRow("2. Writes numbers 1 to 20","k2.write.numbers_20",["EP","GP","SP"])+
+      sh2("👁 Visual Perception")+
+      ynRow("1. What can you see? (identifies objects in picture)","k2.visual.see")+
+      ynRow("2. Odd one out? (identifies different squirrel)","k2.visual.odd_one")+
+      ready("The Child is ready for K2:","k2.ready");
+  }
+
+  else {
+    out='<div style="color:#64748B;padding:12px;text-align:center;font-style:italic">Select a programme to see the Discovery Flight form.</div>';
+  }
+
   return out;
 }
+
 function setScore(domain,val){
   if(!cLead.screening.scores)cLead.screening.scores={};
   cLead.screening.scores[domain]=cLead.screening.scores[domain]===val?"":val;
@@ -2617,18 +2888,78 @@ function downloadFullProfile(lead){
   var prog = l.program||"";
   var domains = SCREEN_DOMAINS[prog]||SCREEN_DOMAINS["Pre-K"]||[];
 
-  var scoreRows = domains.map(function(d,i){
-    var code = scores[d]||"";
-    var lbl  = SCORE_LABEL[code]||"—";
-    var col  = code?(SCORE_COLOR[code]||"#64748B"):"#94A3B8";
-    var bg   = code?(SCORE_BG2[code]||"#F8FAFC"):"#F8FAFC";
-    return '<tr>'+
+  // Build score rows from qa data
+  var qa=l.screening.qa||{};
+  var prog2=l.program||"";
+  var qaSummary=[];
+  
+  // Map key prefixes to readable labels for PDF
+  var qaMap={
+    "ph.gross":"Gross Motor","ph.fine":"Fine Motor","ph.lang":"Language",
+    "ph.cog":"Cognitive","ph.gen":"General Observation","ph.prewriting":"Pre-Writing","ph.parent":"Parental Input",
+    "prek.gk":"General Knowledge","prek.gross":"Gross Motor","prek.fine":"Fine Motor",
+    "prek.lang":"Language","prek.cog":"Cognitive","prek.num":"Number Concepts","prek.pre":"Pre-Writing",
+    "k1.gk":"General Knowledge","k1.gross":"Gross Motor","k1.fine":"Fine Motor",
+    "k1.lang":"Language","k1.cog":"Cognitive","k1.num":"Number Concepts","k1.write":"Writing Skills","k1.visual":"Visual Perception",
+    "k2.gk":"General Knowledge","k2.gross":"Gross Motor","k2.fine":"Fine Motor",
+    "k2.lang":"Language","k2.cog":"Cognitive","k2.num":"Number Concepts","k2.write":"Writing Skills","k2.visual":"Visual Perception"
+  };
+  
+  // Friendly labels for individual qa keys
+  var qaLabels={
+    "ph.gen.clings":"Clings to Parent","ph.gen.concentration":"Concentration","ph.gen.cries":"Cries on arrival","ph.gen.comfortable":"Comfortable in environment","ph.gen.activity":"Activity Level",
+    "ph.gross.slides":"Climbs slides","ph.gross.one_foot":"Stands one foot (3 counts)","ph.gross.ball":"Catches/throws ball","ph.gross.jumps":"Jumps at place",
+    "ph.fine.beads":"Strings beads","ph.fine.scribbles":"Scribbles on paper","ph.fine.tower":"Builds tower 4-6 cubes","ph.fine.picks":"Picks small objects","ph.fine.fixing_toys":"Plays with fixing toys","ph.fine.crayon":"Holds crayon/chalk",
+    "ph.lang.gestures":"Uses gestures","ph.lang.speaks_clearly":"Speaks clearly","ph.lang.speaks_words":"Speaks in words","ph.lang.names_objects":"Names objects","ph.lang.fruits":"Knows fruits (3)","ph.lang.vegetables":"Knows vegetables (3)","ph.lang.animals":"Knows animals (3)","ph.lang.birthday":"Birthday celebration","ph.lang.rhymes":"Sings rhymes",
+    "ph.cog.puzzle":"Knobbed puzzle","ph.cog.colours":"Knows colours RYGB","ph.cog.big_small":"Big and small","ph.cog.one_bead":"Give one bead","ph.cog.two_beads":"Give two beads",
+    "ph.prewriting":"Pre-Writing Skills","ph.parent.toilet":"Toilet trained","ph.parent.eats_self":"Eats by self","ph.parent.diapers":"Uses diapers","ph.ready":"READY FOR PLAYHOUSE",
+    "prek.gen.clings":"Clings to Parent","prek.gen.concentration":"Concentration","prek.gen.activity":"Activity Level",
+    "prek.gk.body_parts":"Body Parts (5)","prek.gk.fruits":"Fruits (5)","prek.gk.animals":"Animals (5)","prek.gk.vehicles":"Vehicles (5)",
+    "prek.gross.stairs":"Climbs stairs","prek.gross.one_foot":"Stands one foot (5c)","prek.gross.hops":"Hops forward","prek.gross.ball":"Catches/throws ball","prek.gross.jumps":"Jumps at place",
+    "prek.fine.beads":"Strings beads","prek.fine.scribbles":"Scribbles","prek.fine.tower":"Tower 6-8 cubes","prek.fine.picks":"Picks small objects","prek.fine.pencil":"Holds pencil",
+    "prek.lang.speaks_clearly":"Speaks clearly","prek.lang.speaks_sentences":"Speaks in sentences","prek.lang.names_objects":"Names objects","prek.lang.follows_instructions":"Follows instructions","prek.lang.birthday":"Birthday","prek.lang.sunday":"Sunday activities","prek.lang.rhymes":"Sings rhymes",
+    "prek.cog.puzzle":"5-6 piece puzzle","prek.cog.colours":"Knows colours","prek.cog.shapes":"Knows shapes","prek.cog.matches":"Matches colours",
+    "prek.num.big_small":"Big and small","prek.num.count_stars":"Counts stars","prek.num.two_beads":"Give two beads",
+    "prek.pre.horizontal":"Draws horizontal lines","prek.pre.vertical":"Draws vertical lines","prek.pre.circle":"Copies a circle","prek.ready":"READY FOR PREK",
+    "k1.gk.body_parts":"Body parts info","k1.gk.fruits":"Fruits","k1.gk.vegetables":"Vegetables","k1.gk.vehicles":"Vehicles","k1.gk.animals":"Animals","k1.gk.upper_case":"Upper case letters","k1.gk.lower_case":"Lower case letters",
+    "k1.gross.tiptoes":"Walks tiptoes","k1.gross.one_foot":"Stands one foot (5c)","k1.gross.cross_walk":"Cross walk","k1.gross.ball":"Catches/throws ball",
+    "k1.fine.beads":"Strings beads","k1.fine.tower":"Tower 6-8 cubes","k1.fine.pencil":"Holds pencil","k1.fine.colours_object":"Colours object",
+    "k1.lang.speaks_sentences":"Speaks sentences","k1.lang.names_objects_use":"Names & uses objects","k1.lang.follows_2step":"Follows 2-step directions","k1.lang.birthday":"Birthday","k1.lang.sunday":"Sunday activities",
+    "k1.cog.puzzle":"5-6 piece puzzle","k1.cog.colours":"Knows colours","k1.cog.shapes":"Knows shapes","k1.cog.days_week":"Days of week","k1.cog.matches":"Matches objects",
+    "k1.num.counts_9":"Counts objects to 9","k1.num.knows_numbers":"Knows numbers up to","k1.num.associates":"Number-numeral association","k1.num.rote_counting":"Rote counting 1-20",
+    "k1.write.copies_shapes":"Copies shapes","k1.write.numbers_1_10":"Writes numbers 1-10",
+    "k1.visual.see":"What can you see?","k1.visual.odd_one":"Odd one out","k1.ready":"READY FOR K1",
+    "k2.gk.body_parts":"Body parts","k2.gk.vegetables":"Vegetables","k2.gk.animals":"Animals","k2.gk.vehicles":"Vehicles","k2.gk.colours":"Colours","k2.gk.shapes":"Shapes","k2.gk.days_week":"Days of week",
+    "k2.gross.walks_backward":"Walks backward","k2.gross.one_foot_arms":"Stands one foot arms folded","k2.gross.ball":"Catches/throws ball",
+    "k2.fine.scissors":"Cuts with scissors","k2.fine.pencil":"Holds pencil","k2.fine.clothes_pins":"Clamps clothes pins",
+    "k2.lang.speaks_sentences":"Speaks sentences","k2.lang.names_objects_use":"Names & uses objects","k2.lang.follows_2step":"2-step directions","k2.lang.birthday":"Birthday","k2.lang.sunday":"Sunday activities","k2.lang.reads_az":"Reads & writes a-z",
+    "k2.cog.puzzle":"8-10 piece puzzle","k2.cog.matches":"Matches colours/shapes",
+    "k2.num.writes_20":"Writes numbers to 20","k2.num.rote_30":"Rote counting 1-30","k2.num.count_20":"Count objects to 20",
+    "k2.write.az":"Writes a to z","k2.write.numbers_20":"Writes numbers 1-20",
+    "k2.visual.see":"What can you see?","k2.visual.odd_one":"Odd one out","k2.ready":"READY FOR K2"
+  };
+
+  // Build rows from qa answers  
+  var qaKeys=Object.keys(qa).filter(function(k){return qa[k]&&k.indexOf(".ready")<0});
+  var scoreRows=qaKeys.map(function(k,i){
+    var val=qa[k]||"";
+    var lbl2=qaLabels[k]||k;
+    var SCOL={EP:"#059669",GP:"#2563EB",SP:"#D97706",NP:"#DC2626",ND:"#94A3B8",Yes:"#059669",No:"#DC2626"};
+    var SBG={EP:"#ECFDF5",GP:"#EFF6FF",SP:"#FFFBEB",NP:"#FEF2F2",ND:"#F1F5F9",Yes:"#ECFDF5",No:"#FEF2F2"};
+    var col=SCOL[val]||"#64748B";
+    var bg=SBG[val]||"#F8FAFC";
+    return'<tr>'+
       '<td>'+(i+1)+'</td>'+
-      '<td style="font-weight:600">'+d+'</td>'+
-      '<td>'+(code?('<span class="score-pill" style="background:'+bg+';color:'+col+'">'+code+'</span>'):"—")+'</td>'+
-      '<td style="color:'+col+';font-weight:500">'+lbl+'</td>'+
+      '<td style="font-weight:600">'+lbl2+'</td>'+
+      '<td>'+(val?('<span class="score-pill" style="background:'+bg+';color:'+col+'">'+val+'</span>'):"—")+'</td>'+
+      '<td></td>'+
     '</tr>';
   }).join("");
+  
+  // Readiness decision
+  var readyKeys={"PlayHouse (PH)":"ph.ready","Todd Care":"ph.ready","Pre-Kindergarten (PreK)":"prek.ready","Pre-K":"prek.ready","Kindergarten 1 (K1)":"k1.ready","Kindergarten 2 (K2)":"k2.ready"};
+  var rKey=readyKeys[l.program]||"";
+  var readyVal=rKey?qa[rKey]||"—":"—";
 
   var page2 =
     '<div class="pg page-wrap">'+
@@ -2789,39 +3120,161 @@ function toggleRail(){
 
 /* ═══════════════ PERSISTENCE ═══════════════ */
 var LS_KEY="bbk_crm_v7";
+var LS_BAK="bbk_crm_v7_bak";          // rolling backup written every 30 min
+var ONE_YEAR_MS=365*24*60*60*1000;
 
 function lsSave(){
   try{
-    localStorage.setItem(LS_KEY,JSON.stringify({leads:leads,leadCounter:leadCounter}));
+    var payload=JSON.stringify({
+      leads:leads,
+      leadCounter:leadCounter,
+      savedAt:new Date().toISOString(),
+      expiresAt:new Date(Date.now()+ONE_YEAR_MS).toISOString()
+    });
+    localStorage.setItem(LS_KEY, payload);
+    // Also mirror to backup key
+    localStorage.setItem(LS_BAK, payload);
   }catch(e){}
 }
 
+// Auto-backup every 30 min while tab is open
+setInterval(function(){lsSave();},30*60*1000);
+
 function lsLoad(){
   try{
-    var raw=localStorage.getItem(LS_KEY);
+    // Try primary, then backup
+    var raw=localStorage.getItem(LS_KEY)||localStorage.getItem(LS_BAK);
     if(!raw)return false;
     var d=JSON.parse(raw);
     if(!d||!d.leads||!d.leads.length)return false;
     leads=d.leads;
     leadCounter=d.leadCounter||leads.length;
-    // Normalise any missing fields from older saves
     leads.forEach(function(l){
       if(!l.activityLog)l.activityLog=[];
       if(!l.siblingIds)l.siblingIds=[];
       if(!l.lastTouched)l.lastTouched="";
       if(!l.screening.scores)l.screening.scores={};
+      if(!l.screening.qa)l.screening.qa={};
     });
     return true;
   }catch(e){return false;}
 }
 
 function lsClear(){
-  if(!confirm("Clear ALL data and reload demo leads? This cannot be undone."))return;
+  var code=prompt("Type DELETE to confirm wiping all data. This cannot be undone.");
+  if(code!=="DELETE")return;
   localStorage.removeItem(LS_KEY);
-  seed();
-  lsSave();
-  renderView();
-  toast("Demo data restored");
+  localStorage.removeItem(LS_BAK);
+  seed();lsSave();renderView();
+  toast("Data cleared — demo lead loaded");
+}
+
+/* ═══════════════ CSV EXPORT ═══════════════ */
+function exportCSV(){
+  var rows=[];
+  var headers=[
+    "BBK ID","Parent Name","Phone","Email",
+    "Child Name","Child Age","Child DOB","Programme","Interest Level","Source",
+    "Address","Father Name","Mother Name","Medical Notes","Sibling Name","Sibling DOB",
+    "Call Done","Call Date","WA Sent","Visit Date","Visit Done",
+    "First Buzz Received","Counselling Done","Counselling Date","Counsellor","Outcome",
+    "Screening Done","Screening Date","Screening Result","Examiner",
+    "Score - General Knowledge","Score - Gross Motor","Score - Fine Motor",
+    "Score - Language","Score - Cognitive","Score - Number Concepts",
+    "Score - Writing Skills","Score - Visual Perception","Score - Pre-Writing","Score - Parental Input",
+    "Offer Sent","Parents Accepted","Docs Submitted","School Confirmed",
+    "Fee Plan","Total Fee","Amount Paid","Payment Mode","Receipt No","Payment Date",
+    "Stage","Last Touched","Remarks"
+  ];
+  rows.push(headers);
+
+  leads.forEach(function(l){
+    var sc=l.screening.scores||{};
+    rows.push([
+      l.bbkId, l.parentName, l.phone, l.email,
+      l.childName, l.childAge, l.firstBuzz.childDOB, l.program, l.interestLevel, l.source,
+      l.firstBuzz.address, l.firstBuzz.fatherName, l.firstBuzz.motherName,
+      l.firstBuzz.medicalNotes, l.firstBuzz.siblingName, l.firstBuzz.siblingDOB,
+      l.outreach.callDone?"Yes":"No", l.outreach.callDate,
+      l.outreach.waSent?"Yes":"No",
+      l.outreach.visitDate, l.outreach.visitDone?"Yes":"No",
+      l.firstBuzz.done?"Yes":"No",
+      l.counselling.done?"Yes":"No", l.counselling.date, l.counselling.counsellorName, l.counselling.outcome,
+      l.screening.done?"Yes":"No", l.counselling.screeningDate, l.screening.result, l.screening.examiner,
+      sc["General Knowledge"]||"", sc["Gross Motor"]||"", sc["Fine Motor"]||"",
+      sc["Language"]||"", sc["Cognitive"]||"", sc["Number Concepts"]||"",
+      sc["Writing Skills"]||"", sc["Visual Perception"]||"", sc["Pre-Writing"]||"", sc["Parental Input"]||"",
+      l.admissionForm.offerSent?"Yes":"No",
+      l.admissionForm.parentAccepted?"Yes":"No",
+      l.admissionForm.docsSubmitted?"Yes":"No",
+      l.admissionForm.schoolConfirmed?"Yes":"No",
+      l.fee.paymentPlan, l.fee.amount, l.fee.amountPaid,
+      l.fee.paymentMode, l.fee.receiptNo, l.fee.paymentDate,
+      l.stage, l.lastTouched, l.remarks
+    ]);
+  });
+
+  var csv=rows.map(function(row){
+    return row.map(function(cell){
+      var s=String(cell==null?"":cell).replace(/"/g,'""');
+      return s.indexOf(",")>-1||s.indexOf('"')>-1||s.indexOf("\n")>-1?'"'+s+'"':s;
+    }).join(",");
+  }).join("\n");
+
+  var bom="\uFEFF"; // UTF-8 BOM for Excel
+  var blob=new Blob([bom+csv],{type:"text/csv;charset=utf-8;"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="BumbleB_Kidz_Leads_"+new Date().toISOString().slice(0,10)+".csv";
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},10000);
+  toast("CSV downloaded — "+leads.length+" lead"+(leads.length!==1?"s":""));
+}
+
+/* ═══════════════ JSON BACKUP / RESTORE ═══════════════ */
+function exportBackup(){
+  var payload=JSON.stringify({
+    version:"bbk_crm_v7",
+    exportedAt:new Date().toISOString(),
+    leads:leads,
+    leadCounter:leadCounter
+  },null,2);
+  var blob=new Blob([payload],{type:"application/json"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="BumbleB_Backup_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},10000);
+  toast("Backup saved — keep this file safe");
+}
+
+function importBackup(){
+  var inp=document.createElement("input");
+  inp.type="file";inp.accept=".json,application/json";
+  inp.onchange=function(){
+    var file=inp.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var d=JSON.parse(e.target.result);
+        if(!d.leads||!Array.isArray(d.leads))throw new Error("Invalid file");
+        if(!confirm("Import "+d.leads.length+" leads? This will REPLACE your current data."))return;
+        leads=d.leads;
+        leadCounter=d.leadCounter||d.leads.length;
+        leads.forEach(function(l){
+          if(!l.activityLog)l.activityLog=[];
+          if(!l.siblingIds)l.siblingIds=[];
+          if(!l.screening.scores)l.screening.scores={};
+        });
+        lsSave();renderView();
+        toast("Imported "+leads.length+" leads ✓");
+      }catch(ex){alert("Could not read backup file: "+ex.message);}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
 }
 
 /* ═══════════════ INIT ═══════════════ */

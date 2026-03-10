@@ -534,7 +534,15 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   font-weight:500;font-size:14px;
   padding:12px 18px;cursor:pointer;transition:all .12s;
 }
-#cancel-btn:hover{background:var(--bg);color:var(--ink-1)}
+#delete-btn{
+  background:var(--surface);border:1px solid var(--red-b);
+  border-radius:var(--r-md);color:var(--red);
+  font-weight:600;font-size:14px;
+  padding:12px 16px;cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;gap:6px;
+}
+#delete-btn:hover{background:var(--red-bg);}
+
 
 /* ── FORM ────────────────────────────── */
 .sh{
@@ -1016,9 +1024,9 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M5 7l3-4 3 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".7"/></svg>
       <span class="rail-link-lbl">Restore Backup</span>
     </button>
-    <button class="rail-link" onclick="lsClear()" style="opacity:.35;margin-top:2px">
+    <button class="rail-link" onclick="lsClear()" style="color:#FCA5A5;margin-top:2px">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
-      <span class="rail-link-lbl">Reset data</span>
+      <span class="rail-link-lbl">Delete All Leads</span>
     </button>
   </div>
 </aside>
@@ -1092,6 +1100,10 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
     <div id="atabs"></div>
     <div id="mpanel"></div>
     <div id="mfooter">
+      <button id="delete-btn" onclick="deleteLead()" title="Delete this lead">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        Delete
+      </button>
       <button id="save-btn"   onclick="saveLead()">Save Changes</button>
       <button id="cancel-btn" onclick="closeMdl()">Cancel</button>
     </div>
@@ -1599,6 +1611,9 @@ function openLead(id){
   atab="outreach";
   calState={};
   renderMdl();
+  // Show delete button only for existing leads
+  var db=document.getElementById("delete-btn");
+  if(db)db.style.display=editId!==null?"":"none";
   el("modal-overlay").classList.add("open");
   document.body.style.overflow="hidden";
 }
@@ -3287,6 +3302,18 @@ function subscribeRealtime(){
 
 function lsLoad(){return lsLoadLocal();}
 
+function deleteLead(){
+  if(editId===null)return;
+  var l=leads.filter(function(x){return x.id===editId;})[0];
+  var name=l?(l.parentName||l.childName||"this lead"):"this lead";
+  if(!confirm("Delete "+name+"? This cannot be undone."))return;
+  leads=leads.filter(function(x){return x.id!==editId;});
+  closeMdl();
+  lsSave();
+  renderView();
+  toast("Lead deleted.");
+}
+
 function lsClear(){
   var code=prompt("Type DELETE to confirm wiping all data. This cannot be undone.");
   if(code!=="DELETE")return;
@@ -3383,29 +3410,152 @@ function exportBackup(){
 
 function importBackup(){
   var inp=document.createElement("input");
-  inp.type="file";inp.accept=".json,application/json";
+  inp.type="file";inp.accept=".json,.csv,application/json,text/csv";
   inp.onchange=function(){
     var file=inp.files[0];if(!file)return;
     var reader=new FileReader();
     reader.onload=function(e){
       try{
-        var d=JSON.parse(e.target.result);
-        if(!d.leads||!Array.isArray(d.leads))throw new Error("Invalid file");
-        if(!confirm("Import "+d.leads.length+" leads? This will REPLACE your current data."))return;
-        leads=d.leads;
-        leadCounter=d.leadCounter||d.leads.length;
-        leads.forEach(function(l){
-          if(!l.activityLog)l.activityLog=[];
-          if(!l.siblingIds)l.siblingIds=[];
-          if(!l.screening.scores)l.screening.scores={};
-        });
-        lsSave();renderView();
-        toast("Imported "+leads.length+" leads ✓");
-      }catch(ex){alert("Could not read backup file: "+ex.message);}
+        var isCSV=file.name.toLowerCase().endsWith(".csv");
+        if(isCSV){
+          importFromCSV(e.target.result);
+        } else {
+          var d=JSON.parse(e.target.result);
+          if(!d.leads||!Array.isArray(d.leads))throw new Error("Invalid file");
+          if(!confirm("Import "+d.leads.length+" leads? This will REPLACE your current data."))return;
+          leads=d.leads;
+          leadCounter=d.leadCounter||d.leads.length;
+          leads.forEach(function(l){
+            if(!l.activityLog)l.activityLog=[];
+            if(!l.siblingIds)l.siblingIds=[];
+            if(!l.screening.scores)l.screening.scores={};
+            if(!l.screening.qa)l.screening.qa={};
+          });
+          lsSave();renderView();
+          toast("Imported "+leads.length+" leads ✓");
+        }
+      }catch(ex){alert("Could not read file: "+ex.message);}
     };
     reader.readAsText(file);
   };
   inp.click();
+}
+
+function importFromCSV(csvText){
+  // Strip UTF-8 BOM if present
+  if(csvText.charCodeAt(0)===0xFEFF)csvText=csvText.slice(1);
+  var lines=csvText.split(/\r?\n/).filter(function(l){return l.trim();});
+  if(lines.length<2){alert("CSV has no data rows.");return;}
+
+  // Parse CSV respecting quoted fields
+  function parseRow(line){
+    var cols=[];var cur="";var inQ=false;
+    for(var i=0;i<line.length;i++){
+      var c=line[i];
+      if(inQ){
+        if(c==='"'&&line[i+1]==='"'){cur+='"';i++;}
+        else if(c==='"'){inQ=false;}
+        else cur+=c;
+      } else {
+        if(c==='"'){inQ=true;}
+        else if(c===','){cols.push(cur);cur="";}
+        else cur+=c;
+      }
+    }
+    cols.push(cur);
+    return cols;
+  }
+
+  var headers=parseRow(lines[0]);
+  var col=function(name){return headers.indexOf(name);};
+  var get=function(row,name){var i=col(name);return i>=0?(row[i]||""):"";};
+  var bool=function(v){return v==="Yes"||v==="yes"||v==="1"||v==="true";};
+
+  var imported=[];
+  for(var r=1;r<lines.length;r++){
+    var row=parseRow(lines[r]);
+    if(row.every(function(c){return!c.trim();}))continue;
+    var l={
+      bbkId:          get(row,"BBK ID"),
+      parentName:     get(row,"Parent Name"),
+      phone:          get(row,"Phone"),
+      email:          get(row,"Email"),
+      childName:      get(row,"Child Name"),
+      childAge:       get(row,"Child Age"),
+      program:        get(row,"Programme"),
+      interestLevel:  get(row,"Interest Level"),
+      source:         get(row,"Source"),
+      stage:          get(row,"Stage")||"New Enquiry",
+      remarks:        get(row,"Remarks"),
+      lastTouched:    get(row,"Last Touched"),
+      activityLog:    [],
+      siblingIds:     [],
+      firstBuzz:{
+        done:         bool(get(row,"First Buzz Received")),
+        childDOB:     get(row,"Child DOB"),
+        address:      get(row,"Address"),
+        fatherName:   get(row,"Father Name"),
+        motherName:   get(row,"Mother Name"),
+        medicalNotes: get(row,"Medical Notes"),
+        siblingName:  get(row,"Sibling Name"),
+        siblingDOB:   get(row,"Sibling DOB")
+      },
+      outreach:{
+        callDone:     bool(get(row,"Call Done")),
+        callDate:     get(row,"Call Date"),
+        waSent:       bool(get(row,"WA Sent")),
+        visitDate:    get(row,"Visit Date"),
+        visitDone:    bool(get(row,"Visit Done"))
+      },
+      counselling:{
+        done:         bool(get(row,"Counselling Done")),
+        date:         get(row,"Counselling Date"),
+        counsellorName:get(row,"Counsellor"),
+        outcome:      get(row,"Outcome"),
+        screeningDate:get(row,"Screening Date")
+      },
+      screening:{
+        done:         bool(get(row,"Screening Done")),
+        result:       get(row,"Screening Result"),
+        examiner:     get(row,"Examiner"),
+        scores:{
+          "General Knowledge": get(row,"Score - General Knowledge"),
+          "Gross Motor":       get(row,"Score - Gross Motor"),
+          "Fine Motor":        get(row,"Score - Fine Motor"),
+          "Language":          get(row,"Score - Language"),
+          "Cognitive":         get(row,"Score - Cognitive"),
+          "Number Concepts":   get(row,"Score - Number Concepts"),
+          "Writing Skills":    get(row,"Score - Writing Skills"),
+          "Visual Perception": get(row,"Score - Visual Perception"),
+          "Pre-Writing":       get(row,"Score - Pre-Writing"),
+          "Parental Input":    get(row,"Score - Parental Input")
+        },
+        qa:{}
+      },
+      admissionForm:{
+        offerSent:      bool(get(row,"Offer Sent")),
+        parentAccepted: bool(get(row,"Parents Accepted")),
+        docsSubmitted:  bool(get(row,"Docs Submitted")),
+        schoolConfirmed:bool(get(row,"School Confirmed"))
+      },
+      fee:{
+        paymentPlan:  get(row,"Fee Plan"),
+        amount:       get(row,"Total Fee"),
+        amountPaid:   get(row,"Amount Paid"),
+        paymentMode:  get(row,"Payment Mode"),
+        receiptNo:    get(row,"Receipt No"),
+        paymentDate:  get(row,"Payment Date")
+      }
+    };
+    imported.push(l);
+  }
+
+  if(!imported.length){alert("No valid rows found in CSV.");return;}
+  if(!confirm("Import "+imported.length+" leads from CSV? This will REPLACE your current data."))return;
+  leads=imported;
+  leadCounter=leads.length;
+  lsSave();renderView();
+  toast("Imported "+leads.length+" leads from CSV ✓");
 }
 
 

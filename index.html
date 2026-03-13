@@ -2316,7 +2316,7 @@ function isStageComplete(key){
     case"first_buzz":
       return !!(fb.done&&fb.childDOB&&fb.motherName&&fb.fatherName);
     case"counselling":
-      return !!(c.done&&c.date&&c.outcome==="Positive");
+      return !!(c.done&&c.outcome==="Positive");
     case"screening":
       return !!(s.done&&(s.result==="Ready for admission"||s.result==="Ready with conditions"));
     case"admission":
@@ -2351,6 +2351,10 @@ function qset(path,val){
   var boolPaths=["outreach.waSent","outreach.visitBooked","outreach.visitDone","outreach.calendlyBooked","outreach.followUpNeeded","outreach.prepSchoolMorning","outreach.activityCenterEvening","outreach.summerCampInterest","firstBuzz.done","counselling.done","counselling.screeningSlotBooked","screening.done","admissionForm.done","admissionForm.offerSent","admissionForm.parentAccepted","admissionForm.docsSubmitted","admissionForm.schoolConfirmed","fee.done"];
   if(boolPaths.indexOf(path)>-1&&typeof val==="string"){val=(val==="true"||val===true);}
   setNV(cLead,path,val);
+  // Auto-populate counselling date from visit date when session is marked done
+  if(path==="counselling.done"&&val&&!cLead.counselling.date&&cLead.outreach.visitDate){
+    cLead.counselling.date=cLead.outreach.visitDate;
+  }
   // Auto-sync: when parentName set, also reflect in header
   if(path==="childName"){cLead.childName=val;}
   if(path==="firstBuzz.fatherName"){
@@ -2480,21 +2484,21 @@ function pFirstBuzz(){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+
       ['Todd Care','PlayHouse (PH)','Pre-Kindergarten (PreK)','Kindergarten 1 (K1)','Kindergarten 2 (K2)'].map(function(p){
         var sel=(l.programs||[]).indexOf(p)>-1;
-        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+        return '<div class="ckl'+(sel?' on':'')+'" data-prog="'+esc(p)+'" style="cursor:pointer"><span>'+esc(p)+'</span></div>';
       }).join('')+
     '</div>'+
     '<div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">🎨 Activity Center (Evening)</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'+
       ['Activity Center (2 Days)','Activity Center (3 Days)','Activity Center (5 Days)'].map(function(p){
         var sel=(l.programs||[]).indexOf(p)>-1;
-        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+        return '<div class="ckl'+(sel?' on':'')+'" data-prog="'+esc(p)+'" style="cursor:pointer"><span>'+esc(p)+'</span></div>';
       }).join('')+
     '</div>'+
     '<div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">☀️ Summer Camp</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+
       ['Summer Camp - 1 Week','Summer Camp - Full'].map(function(p){
         var sel=(l.programs||[]).indexOf(p)>-1;
-        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+        return '<div class="ckl'+(sel?' on':'')+'" data-prog="'+esc(p)+'" style="cursor:pointer"><span>'+esc(p)+'</span></div>';
       }).join('')+
     '</div>'+
     ((l.programs&&l.programs.length)?'<div style="background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.25);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:#F5A800;margin-bottom:10px">✅ Selected: '+esc((l.programs||[]).join(', '))+'</div>':'')+
@@ -2541,7 +2545,7 @@ function pCounselling(){
     renderCal("screening",c.screeningDate,c.screeningTime,"counselling.screeningDate","counselling.screeningTime")+
     (c.screeningDate&&c.screeningTime?ck("✅ Screening slot booked","counselling.screeningSlotBooked",c.screeningSlotBooked):"")+
     (c.screeningSlotBooked?tdone("Screening slot confirmed for "+fmtDate(c.screeningDate)+" at "+c.screeningTime+" ✓"):"")+
-    gate(rdy,"Unlock Screening →","Needs: Session done + Outcome = Positive");
+    gate(rdy,"Unlock Screening →","Needs: Counselling marked done + Outcome = Positive");
 }
 
 /* ── SCREENING PANEL ── */
@@ -2744,6 +2748,11 @@ function renderPanel(){
   var cks=el("mpanel").querySelectorAll("[data-p]");
   cks.forEach(function(c){
     c.addEventListener("change",function(){qset(c.dataset.p,c.type==="checkbox"?c.checked:c.value)});
+  });
+  // wire programme multi-select tiles
+  var progs=el("mpanel").querySelectorAll("[data-prog]");
+  progs.forEach(function(d){
+    d.addEventListener("click",function(){toggleProgram(d.dataset.prog);});
   });
   // wire score buttons (data-domain + data-opt) - legacy
   var sbs=el("mpanel").querySelectorAll(".score-btn");

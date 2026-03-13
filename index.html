@@ -1548,7 +1548,7 @@ function mkLead(){
     id:Date.now(),
     bbkId:genId(),
     parentName:"",phone:"",email:"",
-    childName:"",childAge:"",program:"",
+    childName:"",childAge:"",program:"",programs:[],
     interestLevel:"",source:"",remarks:"",
     outreach:mkO(),
     firstBuzz:mkFB(),
@@ -1728,7 +1728,8 @@ function card(l){
   var ib=ic?'<span class="pill" style="background:'+ic.bg+';color:'+ic.c+';border-color:'+ic.bc+'">'+l.interestLevel+'</span>':"";
   var eb=l.fee.done?'<span class="pill" style="background:var(--green-bg);color:var(--green);border-color:var(--green-b)">Enrolled</span>':"";
   var pb=l.outreach.visitBooked&&!l.outreach.visitDone?'<span class="pill" style="background:var(--amber-bg);color:var(--amber-h);border-color:var(--amber-b)">Visit booked</span>':"";
-  var prog=l.program?'<span class="pill" style="background:'+step.bg+';color:'+step.color+';border-color:'+step.color+'40">'+l.program+'</span>':"";
+  var progDisplay=(l.programs&&l.programs.length)?l.programs.join(', '):(l.program||'');
+  var prog=progDisplay?'<span class="pill" style="background:'+step.bg+';color:'+step.color+';border-color:'+step.color+'40">'+progDisplay+'</span>':"";
   var displayName=l.childName||l.parentName;
   var meta=(l.childName?l.parentName+" · ":"")+l.phone+(l.childAge?" · "+l.childAge:"");
   return '<div class="lead-card" style="border-left-color:'+step.color+'" onclick="openLead('+l.id+')">'+
@@ -2277,7 +2278,7 @@ function renderMdl(){
   var prgOpts=[""].concat(PROGRAMS).map(function(o){return'<option value="'+esc(o)+'"'+(l.program===o?" selected":"")+">"+(o||"Select program")+"</option>"}).join("");
   el("mq").innerHTML=
     '<div class="qf"><span class="ql">Interest</span><select class="qs" onchange="qset(\'interestLevel\',this.value)">'+intOpts+'</select></div>'+
-    '<div class="qf" style="flex:1.5"><span class="ql">Program</span><select class="qs" onchange="qset(\'program\',this.value)">'+prgOpts+'</select></div>'+
+    '<div class="qf" style="flex:1.5"><span class="ql">Primary Program</span><select class="qs" onchange="qsetProgram(this.value)">'+prgOpts+'</select></div>'+
     '<div class="qf" style="flex:1.5"><span class="ql">Source</span><select class="qs" onchange="qset(\'source\',this.value)">'+srcOpts+'</select></div>';
 
   var doneMap={};
@@ -2346,6 +2347,9 @@ function setAtab(k){
   atab=k;renderMdl();
 }
 function qset(path,val){
+  // Coerce string booleans for boolean fields
+  var boolPaths=["outreach.waSent","outreach.visitBooked","outreach.visitDone","outreach.calendlyBooked","outreach.followUpNeeded","outreach.prepSchoolMorning","outreach.activityCenterEvening","outreach.summerCampInterest","firstBuzz.done","counselling.done","counselling.screeningSlotBooked","screening.done","admissionForm.done","admissionForm.offerSent","admissionForm.parentAccepted","admissionForm.docsSubmitted","admissionForm.schoolConfirmed","fee.done"];
+  if(boolPaths.indexOf(path)>-1&&typeof val==="string"){val=(val==="true"||val===true);}
   setNV(cLead,path,val);
   // Auto-sync: when parentName set, also reflect in header
   if(path==="childName"){cLead.childName=val;}
@@ -2354,11 +2358,47 @@ function qset(path,val){
     // Use father name as parentName if parentName empty
     if(!cLead.parentName)cLead.parentName=val;
   }
+  // Bug 4: auto-fill program into fee.program and counselling if not already set
+  if(path==="program"&&val){
+    if(!cLead.fee.program)cLead.fee.program=val;
+  }
+  // Update callStatus side-effects
+  if(path==="outreach.callStatus"){
+    cLead.outreach.callDone=(val==="Called");
+    if(cLead.outreach.callDone&&!cLead.outreach.callDate)cLead.outreach.callDate=new Date().toISOString().slice(0,10);
+  }
+  // Update waSent side-effects
+  if(path==="outreach.waSent"&&val===true){
+    if(!cLead.outreach.waDate)cLead.outreach.waDate=new Date().toISOString().slice(0,10);
+  }
   cLead.stage=deriveStage(cLead);
   renderMdl();
 }
 
 /* ═══════════════ PANEL BUILDERS ═══════════════ */
+function toggleProgram(p){
+  if(!cLead)return;
+  if(!cLead.programs)cLead.programs=[];
+  var idx=cLead.programs.indexOf(p);
+  if(idx>-1)cLead.programs.splice(idx,1);
+  else cLead.programs.push(p);
+  // Keep legacy l.program in sync with first selected program
+  cLead.program=cLead.programs.length?cLead.programs[0]:"";
+  // Auto-fill fee program if not set
+  if(cLead.program&&!cLead.fee.program)cLead.fee.program=cLead.program;
+  cLead.stage=deriveStage(cLead);
+  renderMdl();
+}
+function qsetProgram(val){
+  if(!cLead)return;
+  cLead.program=val;
+  if(!cLead.programs)cLead.programs=[];
+  if(val&&cLead.programs.indexOf(val)===-1)cLead.programs.unshift(val);
+  else if(!val)cLead.programs=[];
+  if(val&&!cLead.fee.program)cLead.fee.program=val;
+  cLead.stage=deriveStage(cLead);
+  renderMdl();
+}
 function fld(lbl,path,val,type,ph){
   type=type||"text";ph=ph||"";
   if(type==="textarea")return'<div class="fld"><label>'+lbl+'</label><textarea data-p="'+path+'" placeholder="'+ph+'" rows="3">'+esc(val)+'</textarea></div>';
@@ -2409,11 +2449,6 @@ function pOutreach(){
     ck("📆 Booked via Calendly","outreach.calendlyBooked",o.calendlyBooked||false)+
     '<div style="margin-top:10px">'+renderCal("visit",o.visitDate,o.visitTime,"outreach.visitDate","outreach.visitTime")+'</div>'+
     (o.visitDate&&o.visitTime?ck("Visit booked in calendar","outreach.visitBooked",o.visitBooked):"")+
-    (o.visitBooked?
-      ck("✅ Visit completed — family came to school","outreach.visitDone",o.visitDone)+
-      (o.visitDone?fld("Visit Notes / Family Feedback","outreach.visitNotes",o.visitNotes,"textarea","How did it go? Their impressions…"):"")+
-      (o.visitDone?tdone("School visit completed ✓"):"")
-    :"")+
     sh2("🔔 Follow-Up")+
     ck("Follow-up needed","outreach.followUpNeeded",o.followUpNeeded||false)+
     (o.followUpNeeded?fld("Follow-Up Date","outreach.followUpDate",o.followUpDate||"","date",""):"")+
@@ -2434,12 +2469,35 @@ function pFirstBuzz(){
   return sh2("🐝 The First Buzz — Application Form")+
     '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:9px;padding:9px 13px;font-size:12px;color:#15803D;font-weight:600;margin-bottom:12px">✅ Child and parent names entered in Outreach appear here automatically.</div>'+
     '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#FCD34D;font-weight:600">📋 Collect the appropriate First Buzz form based on the program. Hand over / send the PDF form to the parents.</div>'+
-    g2(sfld("Form Type","firstBuzz.formType",fb.formType,ftOpts),
+    g2(fld("Form Type","firstBuzz.formType",fb.formType,ftOpts),
        fld("Date Received","firstBuzz.receivedDate",fb.receivedDate,"date",""))+
     sh2("👶 Child Details")+
     g2(fld("Child Full Name","childName",l.childName,"text","Full name"),fld("Age","childAge",l.childAge,"text","e.g. 3.5 yrs"))+
-    g2(fld("Date of Birth","firstBuzz.childDOB",fb.childDOB,"date",""),
-       sfld("Program","program",l.program,[{v:"",l:"Select program"}].concat(PROGRAMS.map(function(p){return{v:p,l:p}}))))+
+    fld("Date of Birth","firstBuzz.childDOB",fb.childDOB,"date","")+
+    sh2("🏫 Programme Selection")+
+    '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:9px 13px;font-size:12px;color:#92400E;font-weight:600;margin-bottom:10px">Select all programmes the child is enrolling in:</div>'+
+    '<div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">🌅 Prep School (Morning)</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+
+      ['Todd Care','PlayHouse (PH)','Pre-Kindergarten (PreK)','Kindergarten 1 (K1)','Kindergarten 2 (K2)'].map(function(p){
+        var sel=(l.programs||[]).indexOf(p)>-1;
+        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+      }).join('')+
+    '</div>'+
+    '<div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">🎨 Activity Center (Evening)</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'+
+      ['Activity Center (2 Days)','Activity Center (3 Days)','Activity Center (5 Days)'].map(function(p){
+        var sel=(l.programs||[]).indexOf(p)>-1;
+        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+      }).join('')+
+    '</div>'+
+    '<div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">☀️ Summer Camp</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+
+      ['Summer Camp - 1 Week','Summer Camp - Full'].map(function(p){
+        var sel=(l.programs||[]).indexOf(p)>-1;
+        return '<label class="ckl'+(sel?' on':'')+'" onclick="toggleProgram(\''+p.replace(/'/g,"\\'")+'\')" style="cursor:pointer"><input type="checkbox" style="display:none"'+(sel?' checked':'')+' /><span>'+p+'</span></label>';
+      }).join('')+
+    '</div>'+
+    ((l.programs&&l.programs.length)?'<div style="background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.25);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:#F5A800;margin-bottom:10px">✅ Selected: '+esc((l.programs||[]).join(', '))+'</div>':'')+
     sh2("👨‍👩‍👦 Parent Details")+
     g2(fld("Father's Name","firstBuzz.fatherName",fb.fatherName,"text",""),fld("Mother's Name","firstBuzz.motherName",fb.motherName,"text",""))+
     g2(fld("Phone","phone",l.phone,"text",""),fld("Email","email",l.email,"text",""))+
@@ -3458,7 +3516,9 @@ function downloadFirstBuzz(lead){
   a.href=url;
   a.target="_blank";
   a.rel="noopener";
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(url);},60000);
 }
 
@@ -3602,7 +3662,7 @@ function downloadFullProfile(lead){
         '<div class="hdr-right">'+
           '<div class="hdr-id">'+l.bbkId+'</div>'+
           '<div>Generated: '+(new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}))+'</div>'+
-          '<div>Programme: <strong>'+(l.program||"—")+'</strong></div>'+
+          '<div>Programme: <strong>'+((l.programs&&l.programs.length)?l.programs.join(', '):(l.program||"—"))+'</strong></div>'+
           '<div>Stage: <strong>'+(l.stage||"").replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()})+'</strong></div>'+
         '</div>'+
       '</div>'+
@@ -3612,7 +3672,7 @@ function downloadFullProfile(lead){
         secHead(1,"The First Buzz — Inquiry & Registration",fb.done)+
         g2(field("Student's Full Name",l.childName), field("Date of Birth",fmtD(fb.childDOB)))+
         g3(field("Age",l.childAge), field("Gender","—"), field("Place of Birth","—"))+
-        g2(field("Programme",l.program), field("Form Received On",fmtD(fb.receivedDate)))+
+        g2(field("Programme",(l.programs&&l.programs.length)?l.programs.join(', '):(l.program||"—")), field("Form Received On",fmtD(fb.receivedDate)))+
         field("Last School Attended", fb.formType||"—")+
         '<hr class="divider">'+
         '<div style="font-size:10px;font-weight:700;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px">Family Information</div>'+
@@ -3753,17 +3813,24 @@ function downloadFullProfile(lead){
   var adm = l.admissionForm||{};
   var fee = l.fee||{};
 
-  var DOC_LIST=[
-    "Admission Form","Birth Certificate","Child Photos (2)","Family Photograph",
-    "Parent ID Proof","Address Proof","Previous School Records",
-    "Medical Information Form","Photography Consent Form","Emergency Medical Consent"
+  var DOC_LIST_PDF=[
+    {id:"d1",label:"Completed Admission Form"},
+    {id:"d2",label:"Birth Certificate Copy"},
+    {id:"d3",label:"Child Photos (2 copies)"},
+    {id:"d4",label:"Family Photograph"},
+    {id:"d5",label:"Parent ID Proof"},
+    {id:"d6",label:"Address Proof"},
+    {id:"d7",label:"Previous School Records (if any)"},
+    {id:"d8",label:"Medical Information Form"},
+    {id:"d9",label:"Photography Consent Form"},
+    {id:"d10",label:"Emergency Medical Consent Form"}
   ];
 
-  var docRows = DOC_LIST.map(function(d){
-    var checked = adm.docs&&(adm.docs[d]==="true"||adm.docs[d]===true);
+  var docRows = DOC_LIST_PDF.map(function(d){
+    var checked = adm.docs&&(adm.docs[d.id]===true||adm.docs[d.id]==="true");
     return '<div class="doc-row">'+
       '<div class="doc-box '+(checked?"checked":"")+'">'+( checked?"✓":"")+'</div>'+
-      '<div class="doc-name">'+d+'</div>'+
+      '<div class="doc-name">'+d.label+'</div>'+
     '</div>';
   }).join("");
 
@@ -3865,7 +3932,9 @@ function downloadFullProfile(lead){
   var url=URL.createObjectURL(blob);
   var a=document.createElement("a");
   a.href=url; a.target="_blank"; a.rel="noopener";
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(url);},60000);
 }
 
@@ -3935,6 +4004,12 @@ function applyLeads(arr,counter){
     if(!l.lastTouched)l.lastTouched="";
     if(!l.screening.scores)l.screening.scores={};
     if(!l.screening.qa)l.screening.qa={};
+    // Migrate: ensure programs array exists
+    if(!l.programs)l.programs=l.program?[l.program]:[];
+    // Migrate: sync fee.program from l.program if blank
+    if(l.program&&!l.fee.program)l.fee.program=l.program;
+    // Migrate: ensure admissionForm.docs object exists
+    if(!l.admissionForm.docs)l.admissionForm.docs={};
   });
 }
 

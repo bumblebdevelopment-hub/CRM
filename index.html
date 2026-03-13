@@ -1363,6 +1363,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
       <div id="stepper"></div>
     </div>
     <div id="mq"></div>
+    <div id="modal-progress"></div>
     <div id="atabs"></div>
     <div id="mpanel"></div>
     <div id="mfooter">
@@ -1404,6 +1405,7 @@ var INT={"Very High":{c:"#059669",bg:"#D1FAE5"},"High":{c:"#D97706",bg:"#FEF3C7"
 var AVC=["#F59E0B","#EC4899","#8B5CF6","#06B6D4","#10B981","#EF4444","#F97316","#6366F1","#14B8A6","#E879F9"];
 
 var SOURCES=["Instagram","Facebook","Event","Brochure/Pamphlet","Website","WhatsApp","Referral by parent","Referral by friend","Walk-in","Google Search","Newspaper","Hoarding/Banner","Other"];
+var CALL_STATUSES=["","Called","Not Answered","Callback Requested","Busy Tone","Switched Off","Not Reachable"];
 var TIME_SLOTS=["9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","12:00 PM","3:00 PM","3:30 PM","4:00 PM"];
 var PROGRAMS=["Todd Care","PlayHouse (PH)","Pre-Kindergarten (PreK)","Kindergarten 1 (K1)","Kindergarten 2 (K2)","Activity Center (2 Days)","Activity Center (3 Days)","Activity Center (5 Days)","Summer Camp - 1 Week","Summer Camp - Full"];
 var FORM_TYPES=["Todd Care","PlayHouse","PreK","K1","K2","Activity Center","Summer Camp"];
@@ -1501,7 +1503,7 @@ function genId(){
   return "BBK-"+y+"-"+pad2(pad2(leadCounter));
 }
 
-function mkO(){return{callDone:false,callDate:"",callNotes:"",waSent:false,waDate:"",visitBooked:false,visitDate:"",visitTime:"",visitDone:false,visitNotes:"",motherPhone:""}}
+function mkO(){return{callStatus:"",callDone:false,callDate:"",callNotes:"",waSent:false,waDate:"",visitBooked:false,visitDate:"",visitTime:"",visitDone:false,visitNotes:"",motherPhone:"",reference:"",prepSchoolMorning:false,activityCenterEvening:false,summerCampInterest:false,calendlyBooked:false,followUpNeeded:false,followUpDate:"",admissionInterest:""}}
 function mkFB(){return{done:false,receivedDate:"",formType:"",childDOB:"",address:"",motherName:"",fatherName:"",medicalNotes:"",siblingName:"",siblingDOB:""}}
 function mkC(){return{done:false,date:"",counsellorName:"",outcome:"",notes:"",screeningSlotBooked:false,screeningDate:"",screeningTime:""}}
 function mkS(){return{done:false,scheduledDate:"",scheduledTime:"",result:"",examiner:"",observations:"",scores:{},qa:{}}}
@@ -2178,6 +2180,16 @@ function renderMdl(){
 
   var doneMap={};
   STEPS.forEach(function(s){doneMap[s.key]=isStageComplete(s.key);});
+  var doneCount=STEPS.filter(function(s){return doneMap[s.key];}).length;
+  var pct=Math.round(doneCount/STEPS.length*100);
+  var progEl=document.getElementById("modal-progress");
+  if(progEl){
+    progEl.innerHTML='<div style="background:linear-gradient(135deg,#1C1917 0%,#292524 100%);border-bottom:1px solid #3F3A37;padding:8px 20px;display:flex;align-items:center;gap:12px">'+
+      '<span style="font-size:11px;font-weight:700;color:rgba(255,242,210,.55);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap">Journey Progress — All 6 Sections Mandatory</span>'+
+      '<div style="flex:1;background:#3F3A37;border-radius:99px;height:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#F59E0B,#EA580C);border-radius:99px;transition:width .4s"></div></div>'+
+      '<span style="font-size:11px;font-weight:700;color:#F59E0B;white-space:nowrap">'+doneCount+'/'+STEPS.length+' complete</span>'+
+    '</div>';
+  }
   el("atabs").innerHTML=STEPS.map(function(s){
     var on=atab===s.key,dn=doneMap[s.key],lk=!canAccessTab(s.key);
     return'<button class="atab'+(on?" on":"")+(lk?" atab-locked":"")+'" style="color:'+(on?s.color:lk?"#CBD5E1":"#9CA3AF")+'" onclick="setAtab(\''+s.key+'\')"'+(lk?' title="Complete previous sections first"':'')+'>'+
@@ -2196,8 +2208,8 @@ function isStageComplete(key){
   var fb=l.firstBuzz||{},o=l.outreach||{},c=l.counselling||{},s=l.screening||{},a=l.admissionForm||{};
   switch(key){
     case"outreach":
-      // Only family details mandatory; Mother's Mobile is optional
-      return !!(l.childName&&fb.fatherName&&l.phone&&fb.motherName);
+      // Family details + at least one call attempt required
+      return !!(l.childName&&fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
     case"first_buzz":
       return !!(fb.done&&fb.childDOB&&fb.motherName&&fb.fatherName);
     case"counselling":
@@ -2207,7 +2219,7 @@ function isStageComplete(key){
     case"admission":
       return !!(a.done&&a.offerSent&&a.parentAccepted&&a.docsSubmitted&&a.schoolConfirmed);
     case"fee":
-      return !!(l.fee&&l.fee.done);
+      return !!(l.fee&&l.fee.done&&l.fee.amountPaid&&l.fee.receiptNo);
     default:return false;
   }
 }
@@ -2263,31 +2275,48 @@ function g2(a,b){return'<div class="g2">'+a+b+'</div>'}
 /* ── OUTREACH PANEL ── */
 function pOutreach(){
   var o=cLead.outreach,l=cLead,fb=cLead.firstBuzz;
-  var rdy=!!(l.childName&&fb.fatherName&&l.phone&&fb.motherName);
+  var rdy=!!(l.childName&&fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
+  var csOpts=[{v:"",l:"— Select status —"}].concat(CALL_STATUSES.filter(function(s){return s;}).map(function(s){return{v:s,l:s}}));
+  var aiOpts=[{v:"",l:"— Select —"},{v:"Yes",l:"Yes — Interested"},{v:"Maybe",l:"Maybe — Follow up"},{v:"No",l:"No — Not interested"}];
   return sh2("👤 Family Details")+
     '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:9px 13px;font-size:12px;color:#1D4ED8;font-weight:600;margin-bottom:12px">ℹ These details auto-fill into The First Buzz form. <span style="background:#DBEAFE;border-radius:4px;padding:1px 6px;margin-left:4px">★ = required to unlock next section</span></div>'+
-    g2(fld("★ Child's Full Name","childName",l.childName,"text","e.g. Aarav Kansara"),fld("Child's Age","childAge",l.childAge,"text","e.g. 4.5 yrs"))+
-    g2(fld("★ Father's Name","firstBuzz.fatherName",fb.fatherName,"text","Full name"),fld("★ Father's Mobile","phone",l.phone,"text","10-digit number"))+
-    g2(fld("★ Mother's Name","firstBuzz.motherName",fb.motherName,"text","Full name"),fld("Mother's Mobile (optional)","outreach.motherPhone",o.motherPhone||"","text","10-digit number"))+
-    sh2("📞 Step 1 — Call the Lead")+
-    g2(sfld("Call Status","outreach.callDone",o.callDone,[{v:false,l:"Not Called Yet"},{v:true,l:"Called ✓"}]),
+    g2(fld("★ Child\'s Full Name","childName",l.childName,"text","e.g. Aarav Kansara"),fld("Child\'s Age","childAge",l.childAge,"text","e.g. 4.5 yrs"))+
+    g2(fld("★ Father\'s Name","firstBuzz.fatherName",fb.fatherName,"text","Full name"),fld("★ Father\'s Mobile","phone",l.phone,"text","10-digit number"))+
+    g2(fld("★ Mother\'s Name","firstBuzz.motherName",fb.motherName,"text","Full name"),fld("Mother\'s Mobile (optional)","outreach.motherPhone",o.motherPhone||"","text","10-digit number"))+
+    g2(fld("Reference (who referred them?)","outreach.reference",o.reference||"","text","e.g. Priya Shah"),fld("Email","email",l.email,"text","parent@email.com"))+
+    sh2("🎯 Programme Interest")+
+    '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:9px 13px;font-size:12px;color:#92400E;font-weight:600;margin-bottom:10px">Check all programmes the family is interested in:</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">'+
+      ck("🏫 Prep School (Morning)","outreach.prepSchoolMorning",o.prepSchoolMorning||false)+
+      ck("🎨 Activity Center (Evening)","outreach.activityCenterEvening",o.activityCenterEvening||false)+
+      ck("☀ Summer Camp","outreach.summerCampInterest",o.summerCampInterest||false)+
+    '</div>'+
+    sfld("Admission Interest","outreach.admissionInterest",o.admissionInterest||"",aiOpts)+
+    sh2("📞 Step 1 — Call the Lead ★")+
+    '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:7px 12px;font-size:11.5px;color:#B91C1C;font-weight:600;margin-bottom:10px">★ Call Status is required to complete Outreach and unlock First Buzz</div>'+
+    g2(sfld("★ Call Status","outreach.callStatus",o.callStatus||"",csOpts),
        fld("Call Date","outreach.callDate",o.callDate,"date",""))+
     fld("Call Notes","outreach.callNotes",o.callNotes,"textarea","What was discussed, objections, questions…")+
-    (o.callDone?tdone("Call completed ✓"):"")+
+    (o.callStatus==="Called"?tdone("Call completed ✓"):"")+
     sh2("💬 Step 2 — Send WhatsApp")+
     g2(sfld("WA Status","outreach.waSent",o.waSent,[{v:false,l:"Not Sent"},{v:true,l:"Sent ✓"}]),
        fld("WA Date","outreach.waDate",o.waDate,"date",""))+
     (o.waSent?tdone("WhatsApp sent ✓"):"")+
     sh2("📅 Step 3 — Book School Visit")+
     '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Select a date and time slot for the visit:</div>'+
-    renderCal("visit",o.visitDate,o.visitTime,"outreach.visitDate","outreach.visitTime")+
+    ck("📆 Booked via Calendly","outreach.calendlyBooked",o.calendlyBooked||false)+
+    '<div style="margin-top:10px">'+renderCal("visit",o.visitDate,o.visitTime,"outreach.visitDate","outreach.visitTime")+'</div>'+
     (o.visitDate&&o.visitTime?ck("Visit booked in calendar","outreach.visitBooked",o.visitBooked):"")+
     (o.visitBooked?
       ck("✅ Visit completed — family came to school","outreach.visitDone",o.visitDone)+
       (o.visitDone?fld("Visit Notes / Family Feedback","outreach.visitNotes",o.visitNotes,"textarea","How did it go? Their impressions…"):"")+
       (o.visitDone?tdone("School visit completed ✓"):"")
     :"")+
-    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Child name + Father name + Father mobile + Mother name");
+    sh2("🔔 Follow-Up")+
+    ck("Follow-up needed","outreach.followUpNeeded",o.followUpNeeded||false)+
+    (o.followUpNeeded?fld("Follow-Up Date","outreach.followUpDate",o.followUpDate||"","date",""):"")+
+    (o.followUpNeeded&&o.followUpDate?'<div class="rbox" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8;font-size:12px">📌 Follow up scheduled: '+fmtDate(o.followUpDate)+'</div>':"")+
+    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Child name + Father name + Father mobile + Mother name + Call Status");
 }
 
 /* ── FIRST BUZZ PANEL ── */
@@ -4053,16 +4082,16 @@ function importFromCSV(csvText){
     var row=parseRow(lines[r]);
     if(row.every(function(c){return!c.trim();}))continue;
     var l={
-      bbkId:          get(row,"BBK ID"),
+      bbkId:          get(row,"BBK ID")||get(row,"#"),
       parentName:     get(row,"Parent Name"),
       phone:          get(row,"Phone"),
       email:          get(row,"Email"),
       childName:      get(row,"Child Name"),
       childAge:       get(row,"Child Age"),
-      program:        get(row,"Programme"),
+      program:        get(row,"Programme")||get(row,"Program"),
       interestLevel:  get(row,"Interest Level"),
-      source:         get(row,"Source"),
-      stage:          get(row,"Stage")||"New Enquiry",
+      source:         get(row,"Source")||get(row,"Source / Notes"),
+      stage:          get(row,"Stage")||"outreach",
       remarks:        get(row,"Remarks"),
       lastTouched:    get(row,"Last Touched"),
       activityLog:    [],
@@ -4078,11 +4107,26 @@ function importFromCSV(csvText){
         siblingDOB:   get(row,"Sibling DOB")
       },
       outreach:{
-        callDone:     bool(get(row,"Call Done")),
-        callDate:     get(row,"Call Date"),
-        waSent:       bool(get(row,"WA Sent")),
-        visitDate:    get(row,"Visit Date"),
-        visitDone:    bool(get(row,"Visit Done"))
+        callStatus:         get(row,"📞 Call Status")||get(row,"Call Status")||"",
+        callDone:           bool(get(row,"Call Done"))||(get(row,"📞 Call Status")||get(row,"Call Status"))==="Called",
+        callDate:           get(row,"Call Date"),
+        callNotes:          get(row,"Remarks"),
+        waSent:             bool(get(row,"WhatsApp Sent?"))||bool(get(row,"WA Sent"))||!!(get(row,"WA Sent Date")),
+        waDate:             get(row,"WA Sent Date")||get(row,"WA Date"),
+        calendlyBooked:     bool(get(row,"Calendly Booked?")),
+        visitDate:          get(row,"Visit Date/Time")||get(row,"Visit Date"),
+        visitTime:          "",
+        visitBooked:        bool(get(row,"Calendly Booked?"))||bool(get(row,"Visit Done")),
+        visitDone:          bool(get(row,"Visit Done")),
+        visitNotes:         "",
+        motherPhone:        "",
+        reference:          get(row,"Reference"),
+        prepSchoolMorning:  bool(get(row,"🏫 Prep School\n(Morning)"))||bool(get(row,"Prep School (Morning)")),
+        activityCenterEvening: bool(get(row,"🎨 Activity Center\n(Evening)"))||bool(get(row,"Activity Center (Evening)")),
+        summerCampInterest: false,
+        followUpNeeded:     bool(get(row,"Follow-Up Needed?")),
+        followUpDate:       get(row,"Follow-Up Date"),
+        admissionInterest:  get(row,"Admission Interest")
       },
       counselling:{
         done:         bool(get(row,"Counselling Done")),

@@ -1401,7 +1401,7 @@ var STEPS=[
   {key:"admission",   label:"Admission",   emoji:"✅",color:"#059669",bg:"#D1FAE5"},
   {key:"fee",         label:"Fee Done",    emoji:"💰",color:"#B45309",bg:"#FEF3C7"}
 ];
-var INT={"Very High":{c:"#059669",bg:"#D1FAE5"},"High":{c:"#D97706",bg:"#FEF3C7"},"Medium":{c:"#7C3AED",bg:"#EDE9FE"},"Low":{c:"#DC2626",bg:"#FEE2E2"}};
+var INT={"Very High":{c:"#059669",bg:"#D1FAE5"},"High":{c:"#D97706",bg:"#FEF3C7"},"Medium":{c:"#7C3AED",bg:"#EDE9FE"},"Low":{c:"#DC2626",bg:"#FEE2E2"},"Not Interested":{c:"#6B7280",bg:"#F3F4F6"}};
 var AVC=["#F59E0B","#EC4899","#8B5CF6","#06B6D4","#10B981","#EF4444","#F97316","#6366F1","#14B8A6","#E879F9"];
 
 var SOURCES=["Instagram","Facebook","Event","Brochure/Pamphlet","Website","WhatsApp","Referral by parent","Referral by friend","Walk-in","Google Search","Newspaper","Hoarding/Banner","Other"];
@@ -1688,7 +1688,8 @@ function card(l){
     "Very High":{c:"var(--green)",  bg:"var(--green-bg)", bc:"var(--green-b)"},
     "High":     {c:"var(--amber-h)",bg:"var(--amber-bg)", bc:"var(--amber-b)"},
     "Medium":   {c:"var(--violet)", bg:"var(--violet-bg)",bc:"var(--violet-b)"},
-    "Low":      {c:"var(--red)",    bg:"var(--red-bg)",   bc:"var(--red-b)"}
+    "Low":      {c:"var(--red)",    bg:"var(--red-bg)",   bc:"var(--red-b)"},
+    "Not Interested":{c:"var(--muted)",bg:"var(--bg)",bc:"var(--line)"}
   };
   var ic=intC[l.interestLevel];
   var ib=ic?'<span class="pill" style="background:'+ic.bg+';color:'+ic.c+';border-color:'+ic.bc+'">'+l.interestLevel+'</span>':"";
@@ -2171,7 +2172,7 @@ function renderMdl(){
 
 
   var srcOpts=[""].concat(SOURCES).map(function(o){return'<option value="'+esc(o)+'"'+(l.source===o?" selected":"")+">"+(o||"Select source")+"</option>"}).join("");
-  var intOpts=["","Very High","High","Medium","Low"].map(function(o){return'<option value="'+esc(o)+'"'+(l.interestLevel===o?" selected":"")+">"+(o||"Select")+"</option>"}).join("");
+  var intOpts=["","Very High","High","Medium","Low","Not Interested"].map(function(o){return'<option value="'+esc(o)+'"'+(l.interestLevel===o?" selected":"")+">"+(o||"Select")+"</option>"}).join("");
   var prgOpts=[""].concat(PROGRAMS).map(function(o){return'<option value="'+esc(o)+'"'+(l.program===o?" selected":"")+">"+(o||"Select program")+"</option>"}).join("");
   el("mq").innerHTML=
     '<div class="qf"><span class="ql">Interest</span><select class="qs" onchange="qset(\'interestLevel\',this.value)">'+intOpts+'</select></div>'+
@@ -2208,8 +2209,8 @@ function isStageComplete(key){
   var fb=l.firstBuzz||{},o=l.outreach||{},c=l.counselling||{},s=l.screening||{},a=l.admissionForm||{};
   switch(key){
     case"outreach":
-      // Family details + at least one call attempt required
-      return !!(l.childName&&fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
+      // Father name + phone + mother name + call status required; childName is optional for event leads
+      return !!(fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
     case"first_buzz":
       return !!(fb.done&&fb.childDOB&&fb.motherName&&fb.fatherName);
     case"counselling":
@@ -2275,7 +2276,7 @@ function g2(a,b){return'<div class="g2">'+a+b+'</div>'}
 /* ── OUTREACH PANEL ── */
 function pOutreach(){
   var o=cLead.outreach,l=cLead,fb=cLead.firstBuzz;
-  var rdy=!!(l.childName&&fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
+  var rdy=!!(fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
   var csOpts=[{v:"",l:"— Select status —"}].concat(CALL_STATUSES.filter(function(s){return s;}).map(function(s){return{v:s,l:s}}));
   var aiOpts=[{v:"",l:"— Select —"},{v:"Yes",l:"Yes — Interested"},{v:"Maybe",l:"Maybe — Follow up"},{v:"No",l:"No — Not interested"}];
   return sh2("👤 Family Details")+
@@ -2316,7 +2317,7 @@ function pOutreach(){
     ck("Follow-up needed","outreach.followUpNeeded",o.followUpNeeded||false)+
     (o.followUpNeeded?fld("Follow-Up Date","outreach.followUpDate",o.followUpDate||"","date",""):"")+
     (o.followUpNeeded&&o.followUpDate?'<div class="rbox" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8;font-size:12px">📌 Follow up scheduled: '+fmtDate(o.followUpDate)+'</div>':"")+
-    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Child name + Father name + Father mobile + Mother name + Call Status");
+    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Father name + Father mobile + Mother name + Call Status");
 }
 
 /* ── FIRST BUZZ PANEL ── */
@@ -4075,7 +4076,43 @@ function importFromCSV(csvText){
   var headers=parseRow(lines[0]);
   var col=function(name){return headers.indexOf(name);};
   var get=function(row,name){var i=col(name);return i>=0?(row[i]||""):"";};
-  var bool=function(v){return v==="Yes"||v==="yes"||v==="1"||v==="true";};
+  var bool=function(v){return v==="Yes"||v==="yes"||v==="1"||v==="true"||v==="Sent"||v==="sent";};
+  // Normalise CSV call status abbreviations to CRM dropdown values
+  var normCS=function(v){
+    if(!v)return"";
+    var m={"busy tone":"Busy Tone","callback req.":"Callback Requested","callback req":"Callback Requested",
+           "switched off":"Switched Off","not reachable":"Not Reachable","called":"Called","not answered":"Not Answered"};
+    return m[v.toLowerCase()]||v;
+  };
+  // Parse date strings like "11 March", "2nd March", "05 March" → "2026-03-11"
+  var MONTHS={"january":1,"february":2,"march":3,"april":4,"may":5,"june":6,
+              "july":7,"august":8,"september":9,"october":10,"november":11,"december":12,
+              "jan":1,"feb":2,"mar":3,"apr":4,"jun":6,"jul":7,"aug":8,"sep":9,"oct":10,"nov":11,"dec":12};
+  var parseDate=function(v){
+    if(!v||v==="-")return"";
+    // Already ISO
+    if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+    // Strip ordinal suffixes: 2nd → 2, 3rd → 3
+    var s=v.trim().replace(/(\d+)(st|nd|rd|th)/i,"$1");
+    var parts=s.split(/[\s\/\-]+/);
+    var day=null,month=null,year=new Date().getFullYear();
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i];
+      if(MONTHS[p.toLowerCase()]){month=MONTHS[p.toLowerCase()];}
+      else if(/^\d{4}$/.test(p)){year=parseInt(p);}
+      else if(/^\d{1,2}$/.test(p)){day=parseInt(p);}
+    }
+    if(!day||!month)return"";
+    return year+"-"+(month<10?"0":"")+month+"-"+(day<10?"0":"")+day;
+  };
+  // Map CSV stage values → CRM stage keys
+  var normStage=function(v,waS,niS){
+    if(!v)return"outreach";
+    var m={"wa sent":"outreach","whatsapp sent":"outreach","not interested":"outreach",
+           "outreach":"outreach","first buzz":"first_buzz","first_buzz":"first_buzz",
+           "counselling":"counselling","screening":"screening","admission":"admission","fee":"fee","fee done":"fee"};
+    return m[v.toLowerCase()]||"outreach";
+  };
 
   var imported=[];
   for(var r=1;r<lines.length;r++){
@@ -4089,43 +4126,43 @@ function importFromCSV(csvText){
       childName:      get(row,"Child Name"),
       childAge:       get(row,"Child Age"),
       program:        get(row,"Programme")||get(row,"Program"),
-      interestLevel:  get(row,"Interest Level"),
-      source:         get(row,"Source")||get(row,"Source / Notes"),
-      stage:          get(row,"Stage")||"outreach",
+      interestLevel:  get(row,"Interest Level")==="Not Interested"?"Not Interested":(get(row,"Interest Level")||""),
+      source:         get(row,"Source / Notes")||get(row,"Source")||get(row,"Reference"),
+      stage:          normStage(get(row,"Stage")),
       remarks:        get(row,"Remarks"),
       lastTouched:    get(row,"Last Touched"),
       activityLog:    [],
       siblingIds:     [],
       firstBuzz:{
         done:         bool(get(row,"First Buzz Received")),
-        childDOB:     get(row,"Child DOB"),
+        childDOB:     parseDate(get(row,"Child DOB")),
         address:      get(row,"Address"),
         fatherName:   get(row,"Father Name"),
         motherName:   get(row,"Mother Name"),
         medicalNotes: get(row,"Medical Notes"),
         siblingName:  get(row,"Sibling Name"),
-        siblingDOB:   get(row,"Sibling DOB")
+        siblingDOB:   parseDate(get(row,"Sibling DOB"))
       },
       outreach:{
-        callStatus:         get(row,"📞 Call Status")||get(row,"Call Status")||"",
-        callDone:           bool(get(row,"Call Done"))||(get(row,"📞 Call Status")||get(row,"Call Status"))==="Called",
-        callDate:           get(row,"Call Date"),
+        callStatus:         normCS(get(row,"📞 Call Status")||get(row,"Call Status")),
+        callDone:           normCS(get(row,"📞 Call Status")||get(row,"Call Status"))==="Called",
+        callDate:           parseDate(get(row,"Call Date")),
         callNotes:          get(row,"Remarks"),
         waSent:             bool(get(row,"WhatsApp Sent?"))||bool(get(row,"WA Sent"))||!!(get(row,"WA Sent Date")),
-        waDate:             get(row,"WA Sent Date")||get(row,"WA Date"),
+        waDate:             parseDate(get(row,"WA Sent Date")||get(row,"WA Date")),
         calendlyBooked:     bool(get(row,"Calendly Booked?")),
-        visitDate:          get(row,"Visit Date/Time")||get(row,"Visit Date"),
+        visitDate:          parseDate(get(row,"Visit Date/Time")||get(row,"Visit Date")),
         visitTime:          "",
         visitBooked:        bool(get(row,"Calendly Booked?"))||bool(get(row,"Visit Done")),
         visitDone:          bool(get(row,"Visit Done")),
         visitNotes:         "",
         motherPhone:        "",
-        reference:          get(row,"Reference"),
+        reference:          "",
         prepSchoolMorning:  bool(get(row,"🏫 Prep School\n(Morning)"))||bool(get(row,"Prep School (Morning)")),
         activityCenterEvening: bool(get(row,"🎨 Activity Center\n(Evening)"))||bool(get(row,"Activity Center (Evening)")),
         summerCampInterest: false,
         followUpNeeded:     bool(get(row,"Follow-Up Needed?")),
-        followUpDate:       get(row,"Follow-Up Date"),
+        followUpDate:       parseDate(get(row,"Follow-Up Date")),
         admissionInterest:  get(row,"Admission Interest")
       },
       counselling:{

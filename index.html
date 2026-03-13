@@ -1728,8 +1728,12 @@ function card(l){
   var ib=ic?'<span class="pill" style="background:'+ic.bg+';color:'+ic.c+';border-color:'+ic.bc+'">'+l.interestLevel+'</span>':"";
   var eb=l.fee.done?'<span class="pill" style="background:var(--green-bg);color:var(--green);border-color:var(--green-b)">Enrolled</span>':"";
   var pb=l.outreach.visitBooked&&!l.outreach.visitDone?'<span class="pill" style="background:var(--amber-bg);color:var(--amber-h);border-color:var(--amber-b)">Visit booked</span>':"";
-  var progDisplay=(l.programs&&l.programs.length)?l.programs.join(', '):(l.program||'');
-  var prog=progDisplay?'<span class="pill" style="background:'+step.bg+';color:'+step.color+';border-color:'+step.color+'40">'+progDisplay+'</span>':"";
+  var progList=l.programs&&l.programs.length?l.programs:(l.program?[l.program]:[]);
+  var MAX_PROG=2;
+  var prog=progList.slice(0,MAX_PROG).map(function(p){
+    return '<span class="pill" style="background:'+step.bg+';color:'+step.color+';border-color:'+step.color+'40;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle">'+esc(p)+'</span>';
+  }).join('');
+  if(progList.length>MAX_PROG)prog+='<span class="pill" style="background:#F3F4F6;color:#6B7280;border-color:#E5E7EB">+' +(progList.length-MAX_PROG)+' more</span>';
   var displayName=l.childName||l.parentName;
   var meta=(l.childName?l.parentName+" · ":"")+l.phone+(l.childAge?" · "+l.childAge:"");
   return '<div class="lead-card" style="border-left-color:'+step.color+'" onclick="openLead('+l.id+')">'+

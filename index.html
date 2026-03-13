@@ -4128,10 +4128,13 @@ function exportCSV(){
   var rows=[];
   var headers=[
     "BBK ID","Parent Name","Phone","Email",
-    "Child Name","Child Age","Child DOB","Programme","Interest Level","Source",
+    "Child Name","Child Age","Child DOB","Programme","All Programmes","Interest Level","Source",
     "Address","Father Name","Mother Name","Medical Notes","Sibling Name","Sibling DOB",
-    "Call Done","Call Date","WA Sent","Visit Date","Visit Done",
-    "First Buzz Received","Counselling Done","Counselling Date","Counsellor","Outcome",
+    "Call Status","Call Done","Call Date","Call Notes",
+    "WA Sent","WA Date","Visit Date","Visit Time","Visit Booked","Visit Done",
+    "First Buzz Received","First Buzz Date",
+    "Counselling Done","Counselling Date","Counsellor","Outcome","Counselling Notes",
+    "Screening Slot Date","Screening Slot Time","Screening Slot Booked",
     "Screening Done","Screening Date","Screening Result","Examiner",
     "Score - General Knowledge","Score - Gross Motor","Score - Fine Motor",
     "Score - Language","Score - Cognitive","Score - Number Concepts",
@@ -4144,17 +4147,24 @@ function exportCSV(){
 
   leads.forEach(function(l){
     var sc=l.screening.scores||{};
+    var allProgs=(l.programs&&l.programs.length)?l.programs.join("; "):(l.program||"");
     rows.push([
       l.bbkId, l.parentName, l.phone, l.email,
-      l.childName, l.childAge, l.firstBuzz.childDOB, l.program, l.interestLevel, l.source,
+      l.childName, l.childAge, l.firstBuzz.childDOB,
+      l.program,   // primary program (backward compat)
+      allProgs,    // all programmes semicolon-separated
+      l.interestLevel, l.source,
       l.firstBuzz.address, l.firstBuzz.fatherName, l.firstBuzz.motherName,
       l.firstBuzz.medicalNotes, l.firstBuzz.siblingName, l.firstBuzz.siblingDOB,
-      l.outreach.callDone?"Yes":"No", l.outreach.callDate,
-      l.outreach.waSent?"Yes":"No",
-      l.outreach.visitDate, l.outreach.visitDone?"Yes":"No",
-      l.firstBuzz.done?"Yes":"No",
-      l.counselling.done?"Yes":"No", l.counselling.date, l.counselling.counsellorName, l.counselling.outcome,
-      l.screening.done?"Yes":"No", l.counselling.screeningDate, l.screening.result, l.screening.examiner,
+      l.outreach.callStatus,
+      l.outreach.callDone?"Yes":"No", l.outreach.callDate, l.outreach.callNotes,
+      l.outreach.waSent?"Yes":"No", l.outreach.waDate,
+      l.outreach.visitDate, l.outreach.visitTime,
+      l.outreach.visitBooked?"Yes":"No", l.outreach.visitDone?"Yes":"No",
+      l.firstBuzz.done?"Yes":"No", l.firstBuzz.receivedDate,
+      l.counselling.done?"Yes":"No", l.counselling.date, l.counselling.counsellorName, l.counselling.outcome, l.counselling.notes,
+      l.counselling.screeningDate, l.counselling.screeningTime, l.counselling.screeningSlotBooked?"Yes":"No",
+      l.screening.done?"Yes":"No", l.screening.scheduledDate, l.screening.result, l.screening.examiner,
       sc["General Knowledge"]||"", sc["Gross Motor"]||"", sc["Fine Motor"]||"",
       sc["Language"]||"", sc["Cognitive"]||"", sc["Number Concepts"]||"",
       sc["Writing Skills"]||"", sc["Visual Perception"]||"", sc["Pre-Writing"]||"", sc["Parental Input"]||"",

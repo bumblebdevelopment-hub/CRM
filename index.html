@@ -1177,6 +1177,25 @@ th{
 /* Smoother body font rendering */
 body{font-size:14.5px;letter-spacing:-.01px}
 
+/* ── QUICK-ADD OVERLAY ── */
+#qa-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:20px}
+#qa-overlay.open{display:flex}
+#qa-box{background:var(--surface);border-radius:16px;width:100%;max-width:500px;box-shadow:0 24px 48px rgba(0,0,0,.45);overflow:hidden}
+#qa-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#1C1917,#292524);color:#FFF2D2;font-weight:700;font-size:14px}
+#qa-head button{background:rgba(255,255,255,.12);border:none;color:#FFF2D2;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+#qa-body{padding:18px}
+.qa-hint{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:9px 12px;font-size:12px;color:#1D4ED8;font-weight:600;margin-bottom:14px}
+.qa-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.qa-row.full{grid-template-columns:1fr}
+.qa-fld label{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.qa-fld input,.qa-fld select{width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);font-family:inherit;outline:none}
+.qa-fld input:focus,.qa-fld select:focus{border-color:var(--amber-h);box-shadow:0 0 0 3px rgba(245,158,11,.15)}
+.qa-req{color:#EF4444;margin-left:2px}
+.qa-footer{display:flex;gap:8px;padding:0 18px 18px;justify-content:flex-end}
+.qa-footer button{padding:9px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:none}
+.qa-btn-save{background:linear-gradient(135deg,#F59E0B,#D97706);color:#1C1917}
+.qa-btn-cancel{background:var(--line);color:var(--ink2)}
+
 </style>
 </head>
 <body>
@@ -1226,7 +1245,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
 
   <div class="rail-body">
     <div style="padding:10px 8px 6px">
-      <button class="btn btn-cta" style="width:100%;justify-content:center;padding:8px 12px;font-size:12.5px;border-radius:7px" onclick="openLead(null)">
+      <button class="btn btn-cta" style="width:100%;justify-content:center;padding:8px 12px;font-size:12.5px;border-radius:7px" onclick="openQA()">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         New Buzz
       </button>
@@ -1324,7 +1343,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         Full File PDF
       </button>
-      <button class="btn btn-cta" onclick="openLead(null)">
+      <button class="btn btn-cta" onclick="openQA()">
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         New Lead
       </button>
@@ -1347,6 +1366,20 @@ body{font-size:14.5px;letter-spacing:-.01px}
 </div>
 
 <!-- ═══ LEAD MODAL ════════════════════════ -->
+<div id="qa-overlay" onclick="qaOclk(event)">
+  <div id="qa-box">
+    <div id="qa-head">
+      <span>➕ New Lead — Quick Add</span>
+      <button onclick="closeQA()">✕</button>
+    </div>
+    <div id="qa-body"></div>
+    <div class="qa-footer">
+      <button class="qa-btn-cancel" onclick="closeQA()">Cancel</button>
+      <button class="qa-btn-save" onclick="submitQA()">Save & Open Full Profile →</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-overlay" onclick="oclk(event)">
   <div id="modal">
     <div class="drag-pill"><span></span></div>
@@ -2138,6 +2171,74 @@ function rTable(f){
 }
 
 /* ═══════════════ MODAL ═══════════════ */
+/* ═══════════════ QUICK-ADD OVERLAY ═══════════════ */
+function openQA(){
+  var csOpts=CALL_STATUSES.filter(function(s){return s;}).map(function(s){
+    return'<option value="'+esc(s)+'">'+esc(s)+'</option>';
+  }).join("");
+  var srcOpts=[""].concat(SOURCES).map(function(s){
+    return'<option value="'+esc(s)+'">'+(s||"— Select source —")+'</option>';
+  }).join("");
+  el("qa-body").innerHTML=
+    '<div class="qa-hint">Fill the 3 required fields ★ and click Save to create this lead. You can edit everything else in the full profile.</div>'+
+    '<div class="qa-row">'+
+      '<div class="qa-fld"><label>★ Father / Parent Name <span class="qa-req">*</span></label><input id="qa-name" type="text" placeholder="e.g. Rajesh Mehta" autocomplete="off"/></div>'+
+      '<div class="qa-fld"><label>★ Mobile Number <span class="qa-req">*</span></label><input id="qa-phone" type="text" placeholder="10-digit number" autocomplete="off"/></div>'+
+    '</div>'+
+    '<div class="qa-row">'+
+      '<div class="qa-fld"><label>Child\'s Name</label><input id="qa-child" type="text" placeholder="e.g. Aarav Mehta" autocomplete="off"/></div>'+
+      '<div class="qa-fld"><label>Child\'s Age</label><input id="qa-age" type="text" placeholder="e.g. 4.5 yrs" autocomplete="off"/></div>'+
+    '</div>'+
+    '<div class="qa-row">'+
+      '<div class="qa-fld"><label>★ Call Status <span class="qa-req">*</span></label><select id="qa-cs"><option value="">— Select call status —</option>'+csOpts+'</select></div>'+
+      '<div class="qa-fld"><label>Source / How did they hear of us?</label><select id="qa-src">'+srcOpts+'</select></div>'+
+    '</div>'+
+    '<div class="qa-row full">'+
+      '<div class="qa-fld"><label>Quick Notes</label><input id="qa-notes" type="text" placeholder="Anything worth noting right now…" autocomplete="off"/></div>'+
+    '</div>';
+  el("qa-overlay").classList.add("open");
+  document.body.style.overflow="hidden";
+  setTimeout(function(){var n=document.getElementById("qa-name");if(n)n.focus();},80);
+}
+function closeQA(){
+  el("qa-overlay").classList.remove("open");
+  document.body.style.overflow="";
+}
+function qaOclk(e){if(e.target===el("qa-overlay"))closeQA();}
+function submitQA(){
+  var name=(document.getElementById("qa-name")||{}).value||"";
+  var phone=(document.getElementById("qa-phone")||{}).value||"";
+  var childName=(document.getElementById("qa-child")||{}).value||"";
+  var childAge=(document.getElementById("qa-age")||{}).value||"";
+  var cs=(document.getElementById("qa-cs")||{}).value||"";
+  var src=(document.getElementById("qa-src")||{}).value||"";
+  var notes=(document.getElementById("qa-notes")||{}).value||"";
+  name=name.trim();phone=phone.trim();childName=childName.trim();childAge=childAge.trim();notes=notes.trim();
+  if(!name){alert("Father / Parent name is required.");return;}
+  if(!phone){alert("Mobile number is required.");return;}
+  if(!cs){alert("Call Status is required — it determines if this lead is ready for the next step.");return;}
+  var l=mkLead();
+  l.parentName=name;
+  l.phone=phone;
+  l.childName=childName;
+  l.childAge=childAge;
+  l.source=src;
+  l.firstBuzz.fatherName=name;
+  l.outreach.callStatus=cs;
+  l.outreach.callDone=(cs==="Called");
+  l.outreach.callDate=l.outreach.callDone?new Date().toISOString().slice(0,10):"";
+  l.outreach.callNotes=notes;
+  l.stage=deriveStage(l);
+  leads.push(l);
+  leadCounter++;
+  lsSave();
+  renderView();
+  closeQA();
+  var lid=l.id;
+  toast("Lead added ✓ — opening full profile…");
+  setTimeout(function(){openLead(lid);},350);
+}
+
 function openLead(id){
   if(id===null){cLead=mkLead();editId=null;}
   else{var f=leads.filter(function(l){return l.id===id});if(!f.length)return;cLead=clone(f[0]);editId=id;}
@@ -2209,8 +2310,8 @@ function isStageComplete(key){
   var fb=l.firstBuzz||{},o=l.outreach||{},c=l.counselling||{},s=l.screening||{},a=l.admissionForm||{};
   switch(key){
     case"outreach":
-      // Father name + phone + mother name + call status required; childName is optional for event leads
-      return !!(fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
+      // Father/parent name + phone + call status required. Mother name is optional for event leads.
+      return !!(fb.fatherName&&l.phone&&o.callStatus);
     case"first_buzz":
       return !!(fb.done&&fb.childDOB&&fb.motherName&&fb.fatherName);
     case"counselling":
@@ -2276,7 +2377,7 @@ function g2(a,b){return'<div class="g2">'+a+b+'</div>'}
 /* ── OUTREACH PANEL ── */
 function pOutreach(){
   var o=cLead.outreach,l=cLead,fb=cLead.firstBuzz;
-  var rdy=!!(fb.fatherName&&l.phone&&fb.motherName&&o.callStatus);
+  var rdy=!!(fb.fatherName&&l.phone&&o.callStatus);
   var csOpts=[{v:"",l:"— Select status —"}].concat(CALL_STATUSES.filter(function(s){return s;}).map(function(s){return{v:s,l:s}}));
   var aiOpts=[{v:"",l:"— Select —"},{v:"Yes",l:"Yes — Interested"},{v:"Maybe",l:"Maybe — Follow up"},{v:"No",l:"No — Not interested"}];
   return sh2("👤 Family Details")+
@@ -2317,7 +2418,7 @@ function pOutreach(){
     ck("Follow-up needed","outreach.followUpNeeded",o.followUpNeeded||false)+
     (o.followUpNeeded?fld("Follow-Up Date","outreach.followUpDate",o.followUpDate||"","date",""):"")+
     (o.followUpNeeded&&o.followUpDate?'<div class="rbox" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8;font-size:12px">📌 Follow up scheduled: '+fmtDate(o.followUpDate)+'</div>':"")+
-    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Father name + Father mobile + Mother name + Call Status");
+    gate(rdy,"Ready to start First Buzz (Application) →","Needs: Father/Parent name + Mobile + Call Status");
 }
 
 /* ── FIRST BUZZ PANEL ── */
@@ -4115,10 +4216,12 @@ function importFromCSV(csvText){
   };
 
   var imported=[];
+  var importBase=Date.now();
   for(var r=1;r<lines.length;r++){
     var row=parseRow(lines[r]);
     if(row.every(function(c){return!c.trim();}))continue;
     var l={
+      id:             importBase+r,
       bbkId:          get(row,"BBK ID")||get(row,"#"),
       parentName:     get(row,"Parent Name"),
       phone:          get(row,"Phone"),
@@ -4137,7 +4240,7 @@ function importFromCSV(csvText){
         done:         bool(get(row,"First Buzz Received")),
         childDOB:     parseDate(get(row,"Child DOB")),
         address:      get(row,"Address"),
-        fatherName:   get(row,"Father Name"),
+        fatherName:   get(row,"Father Name")||get(row,"Parent Name"),
         motherName:   get(row,"Mother Name"),
         medicalNotes: get(row,"Medical Notes"),
         siblingName:  get(row,"Sibling Name"),

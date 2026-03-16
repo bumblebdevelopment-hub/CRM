@@ -4526,10 +4526,7 @@ else setView("leads");
 document.addEventListener("DOMContentLoaded",function(){
   initSupabase();
 });
-</script>
 
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 /* === Logout Function === */
 function doLogout(){
   if(confirm('Are you sure you want to sign out?')){
@@ -4537,7 +4534,10 @@ function doLogout(){
     location.reload();
   }
 }
+</script>
 
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 </script>
 </body>
 </html>

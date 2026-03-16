@@ -2197,7 +2197,7 @@ function openQA(){
     '<div class="qa-hint">Fill the 3 required fields ★ and click Save to create this lead. You can edit everything else in the full profile.</div>'+
     '<div class="qa-row">'+
       '<div class="qa-fld"><label>★ Father / Parent Name <span class="qa-req">*</span></label><input id="qa-name" type="text" placeholder="e.g. Rajesh Mehta" autocomplete="off"/></div>'+
-      '<div class="qa-fld"><label>★ Mobile Number <span class="qa-req">*</span></label><input id="qa-phone" type="text" placeholder="10-digit number" autocomplete="off"/></div>'+
+      '<div class="qa-fld"><label>★ Mobile Number <span class="qa-req">*</span></label><div style="display:flex;align-items:center;gap:0"><span style="background:var(--line-s);border:1.5px solid var(--line);border-right:none;border-radius:8px 0 0 8px;padding:8px 10px;font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap;user-select:none;line-height:1.4">+91</span><input id="qa-phone" type="tel" placeholder="10-digit number" autocomplete="off" maxlength="10" inputmode="numeric" pattern="[0-9]*" style="border-radius:0 8px 8px 0;border-left:none;flex:1;min-width:0"/></div></div>'+
     '</div>'+
     '<div class="qa-row">'+
       '<div class="qa-fld"><label>Child\'s Name</label><input id="qa-child" type="text" placeholder="e.g. Aarav Mehta" autocomplete="off"/></div>'+
@@ -2211,6 +2211,8 @@ function openQA(){
       '<div class="qa-fld"><label>Quick Notes</label><input id="qa-notes" type="text" placeholder="Anything worth noting right now…" autocomplete="off"/></div>'+
     '</div>';
   el("qa-overlay").classList.add("open");
+  var qph=document.getElementById("qa-phone");
+  if(qph){qph.addEventListener("input",function(){var v=qph.value.replace(/\D/g,"").slice(0,10);if(v!==qph.value)qph.value=v;});}
   document.body.style.overflow="hidden";
   setTimeout(function(){var n=document.getElementById("qa-name");if(n)n.focus();},80);
 }
@@ -2227,9 +2229,9 @@ function submitQA(){
   var cs=(document.getElementById("qa-cs")||{}).value||"";
   var src=(document.getElementById("qa-src")||{}).value||"";
   var notes=(document.getElementById("qa-notes")||{}).value||"";
-  name=name.trim();phone=phone.trim();childName=childName.trim();childAge=childAge.trim();notes=notes.trim();
+  name=name.trim();phone=phone.replace(/\D/g,"").slice(0,10);childName=childName.trim();childAge=childAge.trim();notes=notes.trim();
   if(!name){alert("Father / Parent name is required.");return;}
-  if(!phone){alert("Mobile number is required.");return;}
+  if(!phone||phone.length!==10){alert("Please enter a valid 10-digit mobile number.");return;}
   if(!cs){alert("Call Status is required — it determines if this lead is ready for the next step.");return;}
   var l=mkLead();
   l.parentName=name;

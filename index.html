@@ -1365,7 +1365,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
         Export CSV
       </button>
       <button class="btn btn-ghost" onclick="openScript('wa')">WA Templates</button>
-      <button class="btn btn-ghost" onclick="downloadFullProfile(leads[0])" title="Download full admission file">
+      <button class="btn btn-ghost" onclick="downloadAllFeeDone()" title="Download full admission file for all fee-done leads">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         Full File PDF
       </button>
@@ -1590,12 +1590,13 @@ function mkLead(){
 }
 
 function deriveStage(l){
-  if(l.fee.done&&l.fee.amountPaid&&l.fee.receiptNo)return"fee";
-  if(l.admissionForm.done&&l.admissionForm.offerSent&&l.admissionForm.parentAccepted&&l.admissionForm.schoolConfirmed)return"admission";
-  if(l.screening.done&&(l.screening.result==="Ready for admission"||l.screening.result==="Ready with conditions"))return"screening";
-  if(l.counselling.done&&l.counselling.outcome==="Positive")return"counselling";
-  if(l.firstBuzz.done)return"first_buzz";
-  if(l.outreach.visitBooked)return"outreach";
+  var fe=l.fee||{},ad=l.admissionForm||{},sc=l.screening||{},cn=l.counselling||{},fb=l.firstBuzz||{},o=l.outreach||{};
+  if(fe.done&&fe.amountPaid&&fe.receiptNo)return"fee";
+  if(ad.done&&ad.offerSent&&ad.parentAccepted&&ad.schoolConfirmed)return"admission";
+  if(sc.done&&(sc.result==="Ready for admission"||sc.result==="Ready with conditions"))return"screening";
+  if(cn.done&&cn.outcome==="Positive")return"counselling";
+  if(fb.done)return"first_buzz";
+  if(o.visitBooked)return"outreach";
   return"outreach";
 }
 
@@ -1752,8 +1753,9 @@ function card(l){
   };
   var ic=intC[l.interestLevel];
   var ib=ic?'<span class="pill" style="background:'+ic.bg+';color:'+ic.c+';border-color:'+ic.bc+'">'+l.interestLevel+'</span>':"";
-  var eb=l.fee.done?'<span class="pill" style="background:var(--green-bg);color:var(--green);border-color:var(--green-b)">Enrolled</span>':"";
-  var pb=l.outreach.visitBooked&&!l.outreach.visitDone?'<span class="pill" style="background:var(--amber-bg);color:var(--amber-h);border-color:var(--amber-b)">Visit booked</span>':"";
+  var eb=(l.fee||{}).done?'<span class="pill" style="background:var(--green-bg);color:var(--green);border-color:var(--green-b)">Enrolled</span>':"";
+  var _o=l.outreach||{};
+  var pb=_o.visitBooked&&!_o.visitDone?'<span class="pill" style="background:var(--amber-bg);color:var(--amber-h);border-color:var(--amber-b)">Visit booked</span>':"";
   var progList=l.programs&&l.programs.length?l.programs:(l.program?[l.program]:[]);
   var MAX_PROG=2;
   var prog=progList.slice(0,MAX_PROG).map(function(p){
@@ -1861,18 +1863,19 @@ function rPipeline(f){
 function leadScore(l){
   var s=0;
   var prog=(l.program||"").toLowerCase();
+  var o=l.outreach||{},sc=l.screening||{},fb=l.firstBuzz||{};
   // Session interest via program type
   if(prog.indexOf("todd")+prog.indexOf("playhouse")+prog.indexOf("pre-k")+prog.indexOf("k1")+prog.indexOf("k2")>-5)s+=30; // Morning Prep
   if(prog.indexOf("activity")>-1)s+=0; // Evening only – no extra points
   // Visit
-  if(l.outreach.visitBooked)s+=20;
-  if(l.outreach.visitDone)s+=20;
+  if(o.visitBooked)s+=20;
+  if(o.visitDone)s+=20;
   // Discovery Flight
-  if(l.screening.done)s+=15;
+  if(sc.done)s+=15;
   // WhatsApp responded
-  if(l.outreach.waSent)s+=10;
+  if(o.waSent)s+=10;
   // Sibling
-  if(l.firstBuzz&&l.firstBuzz.siblingName)s+=10;
+  if(fb.siblingName)s+=10;
   return Math.min(s,100);
 }
 
@@ -1920,7 +1923,7 @@ function rDashboard(){
     if(!l.outreach||!l.outreach.visitDate)return false;
     var d=new Date(l.outreach.visitDate); return d>=weekStart&&d<=weekEnd;
   });
-  var visitsPending=visitsThisWeek.filter(function(l){return !l.outreach.visitDone});
+  var visitsPending=visitsThisWeek.filter(function(l){return !(l.outreach||{}).visitDone});
 
   // Discovery flights pending
   var dfPending=n(function(l){return l.counselling&&l.counselling.screeningSlotBooked&&!(l.screening&&l.screening.done)});
@@ -2068,8 +2071,8 @@ function rDashboard(){
 
   var actionItems=
     overdueActions.map(function(l){return mkActionItem(l,"#E05252","#FEF2F2","#FEF2F2","Overdue","");}).join("")+
-    todayVisits.map(function(l){return mkActionItem(l,"#FF8C00","#FFF3D6","#FFF3D6","Visit today",l.outreach.visitTime||"");}).join("")+
-    todayScreen.map(function(l){return mkActionItem(l,"#5B8EE6","#EFF6FF","#EFF6FF","Discovery Flight",l.counselling.screeningTime||"");}).join("");
+    todayVisits.map(function(l){return mkActionItem(l,"#FF8C00","#FFF3D6","#FFF3D6","Visit today",(l.outreach||{}).visitTime||"");}).join("")+
+    todayScreen.map(function(l){return mkActionItem(l,"#5B8EE6","#EFF6FF","#EFF6FF","Discovery Flight",(l.counselling||{}).screeningTime||"");}).join("");
 
   var actionsPanel=
     '<div class="d-panel" style="overflow-y:auto;max-height:380px">'+
@@ -2186,19 +2189,20 @@ function rTable(f){
   var tick=function(v){return v?'<span class="ty">✓</span>':'<span class="tn">—</span>'};
   var rows=f.map(function(l,i){
     var s=gs(l.stage);
+    var o=l.outreach||{},fb=l.firstBuzz||{},cn=l.counselling||{},sc=l.screening||{},ad=l.admissionForm||{},fe=l.fee||{};
     return'<tr onclick="openLead('+l.id+')"><td style="color:var(--ink-4);font-weight:600;font-family:monospace;font-size:10px">'+esc(l.bbkId||String(i+1))+'</td>'+
       '<td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:'+av(l.id)+';width:28px;height:28px;border-radius:8px;font-size:10px">'+ini(l.parentName)+'</div><span style="font-weight:600">'+esc(l.parentName)+'</span></div></td>'+
       '<td>'+esc(l.phone)+'</td>'+
       '<td style="color:var(--ink-3)">'+esc(l.childName||"—")+'</td>'+
       '<td style="color:var(--ink-4);font-size:11px">'+esc(l.source||"—")+'</td>'+
-      '<td>'+tick(l.outreach.callDone)+'</td>'+
-      '<td>'+tick(l.outreach.waSent)+'</td>'+
-      '<td>'+tick(l.outreach.visitDone)+'</td>'+
-      '<td>'+tick(l.firstBuzz.done)+'</td>'+
-      '<td>'+tick(l.counselling.done)+'</td>'+
-      '<td>'+tick(l.screening.done)+'</td>'+
-      '<td>'+tick(l.admissionForm.schoolConfirmed)+'</td>'+
-      '<td>'+tick(l.fee.done)+'</td>'+
+      '<td>'+tick(o.callDone)+'</td>'+
+      '<td>'+tick(o.waSent)+'</td>'+
+      '<td>'+tick(o.visitDone)+'</td>'+
+      '<td>'+tick(fb.done)+'</td>'+
+      '<td>'+tick(cn.done)+'</td>'+
+      '<td>'+tick(sc.done)+'</td>'+
+      '<td>'+tick(ad.schoolConfirmed)+'</td>'+
+      '<td>'+tick(fe.done)+'</td>'+
       '<td>'+tag(s.emoji+" "+s.label,s.color,s.bg)+'</td></tr>';
   }).join("")||'<tr><td colspan="14"><div style="padding:40px;text-align:center;color:var(--ink-3);font-weight:600">No leads found</div></td></tr>';
   var ths=["ID","Parent","Phone","Child","Source","📞","💬","Visit","📋 Buzz","Couns","Screen","Admitted","Fee","Stage"].map(function(h){return'<th>'+h+'</th>'}).join("");
@@ -2954,14 +2958,15 @@ function rToday(){
   var visits=[], screenings=[], stale=[], feeFollowup=[];
 
   leads.forEach(function(l){
-    if(l.outreach.visitBooked&&!l.outreach.visitDone&&l.outreach.visitDate===today)
+    var o=l.outreach||{},cn=l.counselling||{},sc=l.screening||{},fe=l.fee||{},ad=l.admissionForm||{};
+    if(o.visitBooked&&!o.visitDone&&o.visitDate===today)
       visits.push(l);
-    if(l.counselling.screeningSlotBooked&&!l.screening.done&&l.counselling.screeningDate===today)
+    if(cn.screeningSlotBooked&&!sc.done&&cn.screeningDate===today)
       screenings.push(l);
     var touched=l.lastTouched||"";
-    if(!l.fee.done&&daysSince(touched)>=7&&l.stage!=="outreach")
+    if(!fe.done&&daysSince(touched)>=7&&l.stage!=="outreach")
       stale.push({lead:l,days:daysSince(touched)});
-    if(l.admissionForm.schoolConfirmed&&!l.fee.done)
+    if(ad.schoolConfirmed&&!fe.done)
       feeFollowup.push(l);
   });
 
@@ -2993,8 +2998,8 @@ function rToday(){
     '</div>';
   }
 
-  var vRows=visits.map(function(l){return arow(l,"🏫","var(--blue)","Visit today · "+(l.outreach.visitTime||"")+" · "+esc(l.program||""),l.outreach.visitTime||"","var(--blue)","var(--blue-bg)")}).join("");
-  var sRows=screenings.map(function(l){return arow(l,"🔍","var(--violet)","Screening today · "+(l.counselling.screeningTime||"")+" · "+esc(l.program||""),l.counselling.screeningTime||"","var(--violet)","var(--violet-bg)")}).join("");
+  var vRows=visits.map(function(l){var o=l.outreach||{};return arow(l,"🏫","var(--blue)","Visit today · "+(o.visitTime||"")+" · "+esc(l.program||""),o.visitTime||"","var(--blue)","var(--blue-bg)")}).join("");
+  var sRows=screenings.map(function(l){var cn=l.counselling||{};return arow(l,"🔍","var(--violet)","Screening today · "+(cn.screeningTime||"")+" · "+esc(l.program||""),cn.screeningTime||"","var(--violet)","var(--violet-bg)")}).join("");
   var staleRows=stale.map(function(s){return arow(s.lead,"⏱","var(--orange)","No activity for "+s.days+" days · "+gs(s.lead.stage).label,s.days+"d idle","var(--orange)","var(--orange-bg)")}).join("");
   var feeRows=feeFollowup.map(function(l){return arow(l,"💰","var(--red)","Admitted · fee not collected · "+esc(l.program||""),"Fee due","var(--red)","var(--red-bg)")}).join("");
 
@@ -3047,7 +3052,8 @@ function rSourceAnalytics(){
     var s=l.source||"Unknown";
     if(!srcMap[s])srcMap[s]={total:0,enrolled:0};
     srcMap[s].total++;
-    if(l.fee.done&&l.fee.amountPaid)srcMap[s].enrolled++;
+    var fe=l.fee||{};
+    if(fe.done&&fe.amountPaid)srcMap[s].enrolled++;
   });
   var srcs=Object.keys(srcMap).sort(function(a,b){return srcMap[b].total-srcMap[a].total});
   var maxN=srcs.reduce(function(m,s){return Math.max(m,srcMap[s].total)},0)||1;
@@ -3392,7 +3398,8 @@ function unlinkSib(id){
 function rOutstanding(){
   // Admitted & fee not done, or partially paid
   var pending=leads.filter(function(l){
-    return l.admissionForm.schoolConfirmed&&(!l.fee.done||!l.fee.amountPaid);
+    var ad=l.admissionForm||{},fe=l.fee||{};
+    return ad.schoolConfirmed&&(!fe.done||!fe.amountPaid);
   });
 
   var on=el("outstanding-n");
@@ -3410,9 +3417,10 @@ function rOutstanding(){
   function estFee(l){
     var f=FEE_STRUCT[l.program||""];
     if(!f)return"";
-    var plan=l.fee.paymentPlan||"Annual";
+    var fe=l.fee||{};
+    var plan=fe.paymentPlan||"Annual";
     var amt=f[plan]||"";
-    var paid=parseFloat(l.fee.amountPaid)||0;
+    var paid=parseFloat(fe.amountPaid)||0;
     var total=parseFloat(String(amt).replace(/,/g,""))||0;
     var bal=total-paid;
     return bal>0?"₹"+bal.toLocaleString("en-IN")+" due":"₹"+total.toLocaleString("en-IN")+" (not started)";
@@ -3449,7 +3457,7 @@ function rOutstanding(){
 }
 
 function copyAllFeeWA(){
-  var pending=leads.filter(function(l){return l.admissionForm.schoolConfirmed&&(!l.fee.done||!l.fee.amountPaid)});
+  var pending=leads.filter(function(l){var ad=l.admissionForm||{},fe=l.fee||{};return ad.schoolConfirmed&&(!fe.done||!fe.amountPaid)});
   var msgs=pending.map(function(l){
     return"Dear "+(l.parentName.split(" ")[0]||"Parent")+", this is a reminder from BumbleB Kidz. "+
       (l.childName||"Your child")+"'s admission has been confirmed. Kindly complete the fee payment at the earliest. Call us on 9824821207. — Team BumbleB Kidz 📋";
@@ -3465,7 +3473,7 @@ function downloadFirstBuzz(lead){
   var today=new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric"});
   var progChecks=["PlayHouse (PH)","Pre-K","Kindergarten 1 (K1)","Kindergarten 2 (K2)"];
   var checkboxes=progChecks.map(function(p){
-    var checked=l.program===p||l.firstBuzz.formType===p;
+    var checked=l.program===p||(l.firstBuzz||{}).formType===p;
     return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:14px">'+
       '<span style="width:13px;height:13px;border:1.5px solid #333;display:inline-flex;align-items:center;justify-content:center;font-size:9px">'+(checked?"✓":"")+'</span>'+
       '<span style="font-family:monospace;font-size:12px">'+p.replace(" (PH)","").replace("Kindergarten 1 ","K1").replace("Kindergarten 2 ","K2")+'</span>'+
@@ -3482,8 +3490,9 @@ function downloadFirstBuzz(lead){
   }
 
   var dob="";
-  if(l.firstBuzz.childDOB){
-    var d=new Date(l.firstBuzz.childDOB);
+  var fb=l.firstBuzz||{};
+  if(fb.childDOB){
+    var d=new Date(fb.childDOB);
     dob=d.toLocaleDateString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric"});
   }
 
@@ -3527,31 +3536,31 @@ function downloadFirstBuzz(lead){
       '<div style="display:flex;flex-wrap:wrap">'+
         line("Student's Name",l.childName,"60%")+
         line("Date of Birth",dob,"38%")+
-        line("Gender",l.firstBuzz.childDOB?"":"","30%")+
+        line("Gender",fb.childDOB?"":"","30%")+
         line("Place of Birth","","38%")+
-        line("Last School Attended",l.firstBuzz.formType||"","60%")+
+        line("Last School Attended",fb.formType||"","60%")+
       '</div>'+
-      line("Medical History / Allergies",l.firstBuzz.medicalNotes)+
+      line("Medical History / Allergies",fb.medicalNotes)+
     '</div>'+
 
     // Family info
     '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px;margin-bottom:12px">'+
       '<div style="font-size:10px;font-weight:700;color:#065F46;letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px">❖ Family Information</div>'+
       '<div style="display:flex;flex-wrap:wrap">'+
-        line("Father's Name",l.firstBuzz.fatherName,"55%")+
+        line("Father's Name",fb.fatherName,"55%")+
         line("Mobile",l.phone,"38%")+
-        line("Mother's Name",l.firstBuzz.motherName,"55%")+
+        line("Mother's Name",fb.motherName,"55%")+
         line("Mobile (Mother)","","38%")+
       '</div>'+
-      line("Address",l.firstBuzz.address)+
+      line("Address",fb.address)+
     '</div>'+
 
     // Sibling
     '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px;margin-bottom:12px">'+
       '<div style="font-size:10px;font-weight:700;color:#1E40AF;letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px">Sibling Information</div>'+
       '<div style="display:flex;flex-wrap:wrap">'+
-        line("Sibling's Name",l.firstBuzz.siblingName,"55%")+
-        line("Date of Birth",l.firstBuzz.siblingDOB,"38%")+
+        line("Sibling's Name",fb.siblingName,"55%")+
+        line("Date of Birth",fb.siblingDOB,"38%")+
       '</div>'+
     '</div>'+
 
@@ -3585,7 +3594,7 @@ function downloadFirstBuzz(lead){
 }
 
 function downloadAllFirstBuzz(){
-  var valid=leads.filter(function(l){return l.firstBuzz.done||l.childName||l.parentName});
+  var valid=leads.filter(function(l){return (l.firstBuzz||{}).done||l.childName||l.parentName});
   if(!valid.length){toast("No leads with data to export");return;}
   valid.forEach(function(l,i){
     setTimeout(function(){downloadFirstBuzz(l);},i*400);
@@ -3594,8 +3603,9 @@ function downloadAllFirstBuzz(){
 }
 
 
-function downloadFullProfile(lead){
-  var l=lead;
+function downloadFullProfile(leadOrLeads){
+  var allLeads=Array.isArray(leadOrLeads)?leadOrLeads:[leadOrLeads];
+  if(!allLeads.length){alert("No leads to generate.");return;}
 
   function v(val){ return val||(val===false?"No":"—"); }
   function fmtD(ds){
@@ -3708,6 +3718,9 @@ function downloadFullProfile(lead){
     return '<div class="sec-head"><div class="sec-num">'+num+'</div><span class="sec-title">'+title+'</span>'+badge+'</div>';
   }
 
+  var allPages="";
+  allLeads.forEach(function(l,lidx){
+
   // ── PAGE 1: First Buzz + Counselling ─────────────────────────────────────
   var fb = l.firstBuzz||{};
   var cn = l.counselling||{};
@@ -3770,7 +3783,7 @@ function downloadFullProfile(lead){
   var domains = SCREEN_DOMAINS[prog]||SCREEN_DOMAINS["Pre-K"]||[];
 
   // Build score rows from qa data
-  var qa=l.screening.qa||{};
+  var qa=sc.qa||{};
   var prog2=l.program||"";
   var qaSummary=[];
   
@@ -3983,11 +3996,15 @@ function downloadFullProfile(lead){
       '</div>'+
     '</div>';
 
+  allPages+=page1+page2+page3+page4;
+  }); // end forEach lead
+
+  var docTitle=allLeads.length===1?('BumbleB Kidz — '+(allLeads[0].childName||allLeads[0].parentName)+' — Full Admission File'):('BumbleB Kidz — '+allLeads.length+' Leads — Full Admission Files');
   var html='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'+
-    '<title>BumbleB Kidz — '+l.childName+' — Full Admission File</title>'+
+    '<title>'+docTitle+'</title>'+
     '<style>'+css+'</style></head><body>'+
-    '<button class="print-btn no-print" onclick="window.print()">🖨 Save as PDF</button>'+
-    page1+page2+page3+page4+
+    '<button class="print-btn no-print" onclick="window.print()">🖨 Save as PDF ('+allLeads.length+' lead'+(allLeads.length>1?'s':'')+')</button>'+
+    allPages+
     '</body></html>';
 
   var blob=new Blob([html],{type:"text/html"});
@@ -3998,6 +4015,21 @@ function downloadFullProfile(lead){
   a.click();
   document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(url);},60000);
+}
+
+function downloadAllFeeDone(){
+  var feeDone=leads.filter(function(l){
+    var fe=l.fee||{};
+    return fe.done;
+  });
+  if(!feeDone.length){
+    alert("No leads with Fee Done status found.\n\nTo use Full File PDF, at least one lead must have completed the fee stage.");
+    return;
+  }
+  if(!confirm("Generate Full File PDF for "+feeDone.length+" lead"+(feeDone.length>1?"s":"")+" with Fee Done?\n\nThis may take a moment for large numbers.")){
+    return;
+  }
+  downloadFullProfile(feeDone);
 }
 
 
@@ -4064,6 +4096,13 @@ function applyLeads(arr,counter){
     if(!l.activityLog)l.activityLog=[];
     if(!l.siblingIds)l.siblingIds=[];
     if(!l.lastTouched)l.lastTouched="";
+    // Ensure all sub-objects exist before accessing nested props
+    if(!l.outreach)l.outreach=mkO();
+    if(!l.firstBuzz)l.firstBuzz=mkFB();
+    if(!l.counselling)l.counselling=mkC();
+    if(!l.screening)l.screening=mkS();
+    if(!l.admissionForm)l.admissionForm=mkAdm();
+    if(!l.fee)l.fee=mkFee();
     if(!l.screening.scores)l.screening.scores={};
     if(!l.screening.qa)l.screening.qa={};
     // Migrate: ensure programs array exists
@@ -4195,34 +4234,35 @@ function exportCSV(){
   rows.push(headers);
 
   leads.forEach(function(l){
-    var sc=l.screening.scores||{};
+    var fb=l.firstBuzz||{},o=l.outreach||{},cn=l.counselling||{},sc=l.screening||{},ad=l.admissionForm||{},fe=l.fee||{};
+    var scr=sc.scores||{};
     var allProgs=(l.programs&&l.programs.length)?l.programs.join("; "):(l.program||"");
     rows.push([
       l.bbkId, l.parentName, l.phone, l.email,
-      l.childName, l.childAge, l.firstBuzz.childDOB,
+      l.childName, l.childAge, fb.childDOB,
       l.program,   // primary program (backward compat)
       allProgs,    // all programmes semicolon-separated
       l.interestLevel, l.source,
-      l.firstBuzz.address, l.firstBuzz.fatherName, l.firstBuzz.motherName,
-      l.firstBuzz.medicalNotes, l.firstBuzz.siblingName, l.firstBuzz.siblingDOB,
-      l.outreach.callStatus,
-      l.outreach.callDone?"Yes":"No", l.outreach.callDate, l.outreach.callNotes,
-      l.outreach.waSent?"Yes":"No", l.outreach.waDate,
-      l.outreach.visitDate, l.outreach.visitTime,
-      l.outreach.visitBooked?"Yes":"No", l.outreach.visitDone?"Yes":"No",
-      l.firstBuzz.done?"Yes":"No", l.firstBuzz.receivedDate,
-      l.counselling.done?"Yes":"No", l.counselling.date, l.counselling.counsellorName, l.counselling.outcome, l.counselling.notes,
-      l.counselling.screeningDate, l.counselling.screeningTime, l.counselling.screeningSlotBooked?"Yes":"No",
-      l.screening.done?"Yes":"No", l.screening.scheduledDate, l.screening.result, l.screening.examiner,
-      sc["General Knowledge"]||"", sc["Gross Motor"]||"", sc["Fine Motor"]||"",
-      sc["Language"]||"", sc["Cognitive"]||"", sc["Number Concepts"]||"",
-      sc["Writing Skills"]||"", sc["Visual Perception"]||"", sc["Pre-Writing"]||"", sc["Parental Input"]||"",
-      l.admissionForm.offerSent?"Yes":"No",
-      l.admissionForm.parentAccepted?"Yes":"No",
-      l.admissionForm.docsSubmitted?"Yes":"No",
-      l.admissionForm.schoolConfirmed?"Yes":"No",
-      l.fee.paymentPlan, l.fee.amount, l.fee.amountPaid,
-      l.fee.paymentMode, l.fee.receiptNo, l.fee.paymentDate,
+      fb.address, fb.fatherName, fb.motherName,
+      fb.medicalNotes, fb.siblingName, fb.siblingDOB,
+      o.callStatus,
+      o.callDone?"Yes":"No", o.callDate, o.callNotes,
+      o.waSent?"Yes":"No", o.waDate,
+      o.visitDate, o.visitTime,
+      o.visitBooked?"Yes":"No", o.visitDone?"Yes":"No",
+      fb.done?"Yes":"No", fb.receivedDate,
+      cn.done?"Yes":"No", cn.date, cn.counsellorName, cn.outcome, cn.notes,
+      cn.screeningDate, cn.screeningTime, cn.screeningSlotBooked?"Yes":"No",
+      sc.done?"Yes":"No", sc.scheduledDate, sc.result, sc.examiner,
+      scr["General Knowledge"]||"", scr["Gross Motor"]||"", scr["Fine Motor"]||"",
+      scr["Language"]||"", scr["Cognitive"]||"", scr["Number Concepts"]||"",
+      scr["Writing Skills"]||"", scr["Visual Perception"]||"", scr["Pre-Writing"]||"", scr["Parental Input"]||"",
+      ad.offerSent?"Yes":"No",
+      ad.parentAccepted?"Yes":"No",
+      ad.docsSubmitted?"Yes":"No",
+      ad.schoolConfirmed?"Yes":"No",
+      fe.paymentPlan, fe.amount, fe.amountPaid,
+      fe.paymentMode, fe.receiptNo, fe.paymentDate,
       l.stage, l.lastTouched, l.remarks
     ]);
   });

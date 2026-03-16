@@ -1443,7 +1443,7 @@ var INT={"Very High":{c:"#059669",bg:"#D1FAE5"},"High":{c:"#D97706",bg:"#FEF3C7"
 var AVC=["#F59E0B","#EC4899","#8B5CF6","#06B6D4","#10B981","#EF4444","#F97316","#6366F1","#14B8A6","#E879F9"];
 
 var SOURCES=["Instagram","Facebook","Event","Brochure/Pamphlet","Website","WhatsApp","Referral by parent","Referral by friend","Walk-in","Google Search","Newspaper","Hoarding/Banner","Other"];
-var CALL_STATUSES=["","Called","Not Answered","Callback Requested","Busy Tone","Switched Off","Not Reachable"];
+var CALL_STATUSES=["","Called","Not Answered","Callback Requested","Busy Tone","Switched Off","Not Reachable","Call Not Required"];
 var TIME_SLOTS=["9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","12:00 PM","3:00 PM","3:30 PM","4:00 PM"];
 var PROGRAMS=["Todd Care","PlayHouse (PH)","Pre-Kindergarten (PreK)","Kindergarten 1 (K1)","Kindergarten 2 (K2)","Activity Center (2 Days)","Activity Center (3 Days)","Activity Center (5 Days)","Summer Camp - 1 Week","Summer Camp - Full"];
 var FORM_TYPES=["Todd Care","PlayHouse","PreK","K1","K2","Activity Center","Summer Camp"];
@@ -2421,6 +2421,11 @@ function fld(lbl,path,val,type,ph){
   if(type==="textarea")return'<div class="fld"><label>'+lbl+'</label><textarea data-p="'+path+'" placeholder="'+ph+'" rows="3">'+esc(val)+'</textarea></div>';
   return'<div class="fld"><label>'+lbl+'</label><input type="'+type+'" data-p="'+path+'" value="'+esc(val)+'" placeholder="'+ph+'"/></div>';
 }
+function phoneFld(lbl,path,val,ph){
+  ph=ph||"10-digit number";
+  var clean=(val||"").replace(/\D/g,"").replace(/^91/,"").slice(0,10);
+  return'<div class="fld"><label>'+lbl+'</label><div style="display:flex;align-items:center;gap:0"><span style="background:var(--line-s);border:1px solid var(--line);border-right:none;border-radius:var(--r-sm) 0 0 var(--r-sm);padding:7px 10px;font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap;user-select:none;line-height:1.5">+91</span><input type="tel" data-p="'+path+'" data-phone="1" value="'+esc(clean)+'" placeholder="'+esc(ph)+'" maxlength="10" inputmode="numeric" pattern="[0-9]*" style="border-radius:0 var(--r-sm) var(--r-sm) 0;border-left:none;flex:1;min-width:0"/></div></div>';
+}
 function sfld(lbl,path,val,opts){
   var os=opts.map(function(o){var v=o.v!==undefined?o.v:o,lt=o.l||o||"Select";return'<option value="'+esc(v)+'"'+(val===v?" selected":"")+">"+esc(lt)+"</option>"}).join("");
   return'<div class="fld"><label>'+lbl+'</label><select data-p="'+path+'">'+os+'</select></div>';
@@ -2440,8 +2445,8 @@ function pOutreach(){
   return sh2("👤 Family Details")+
     '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:9px 13px;font-size:12px;color:#1D4ED8;font-weight:600;margin-bottom:12px">ℹ These details auto-fill into The First Buzz form. <span style="background:#DBEAFE;border-radius:4px;padding:1px 6px;margin-left:4px">★ = required to unlock next section</span></div>'+
     g2(fld("★ Child\'s Full Name","childName",l.childName,"text","e.g. Aarav Kansara"),fld("Child\'s Age","childAge",l.childAge,"text","e.g. 4.5 yrs"))+
-    g2(fld("★ Father\'s Name","firstBuzz.fatherName",fb.fatherName,"text","Full name"),fld("★ Father\'s Mobile","phone",l.phone,"text","10-digit number"))+
-    g2(fld("★ Mother\'s Name","firstBuzz.motherName",fb.motherName,"text","Full name"),fld("Mother\'s Mobile (optional)","outreach.motherPhone",o.motherPhone||"","text","10-digit number"))+
+    g2(fld("★ Father\'s Name","firstBuzz.fatherName",fb.fatherName,"text","Full name"),phoneFld("★ Father\'s Mobile","phone",l.phone,"10-digit number"))+
+    g2(fld("★ Mother\'s Name","firstBuzz.motherName",fb.motherName,"text","Full name"),phoneFld("Mother\'s Mobile (optional)","outreach.motherPhone",o.motherPhone||"","10-digit number"))+
     g2(fld("Reference (who referred them?)","outreach.reference",o.reference||"","text","e.g. Priya Shah"),fld("Email","email",l.email,"text","parent@email.com"))+
     sh2("🎯 Programme Interest")+
     '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:9px 13px;font-size:12px;color:#92400E;font-weight:600;margin-bottom:10px">Check all programmes the family is interested in:</div>'+
@@ -2761,6 +2766,12 @@ function renderPanel(){
   var cks=el("mpanel").querySelectorAll("[data-p]");
   cks.forEach(function(c){
     c.addEventListener("change",function(){qset(c.dataset.p,c.type==="checkbox"?c.checked:c.value)});
+    if(c.dataset.phone){
+      c.addEventListener("input",function(){
+        var v=c.value.replace(/\D/g,"").slice(0,10);
+        if(v!==c.value)c.value=v;
+      });
+    }
   });
   // wire programme multi-select tiles
   var progs=el("mpanel").querySelectorAll("[data-prog]");
@@ -4289,7 +4300,7 @@ function importFromCSV(csvText){
   var normCS=function(v){
     if(!v)return"";
     var m={"busy tone":"Busy Tone","callback req.":"Callback Requested","callback req":"Callback Requested",
-           "switched off":"Switched Off","not reachable":"Not Reachable","called":"Called","not answered":"Not Answered"};
+           "switched off":"Switched Off","not reachable":"Not Reachable","called":"Called","not answered":"Not Answered","call not required":"Call Not Required"};
     return m[v.toLowerCase()]||v;
   };
   // Parse date strings like "11 March", "2nd March", "05 March" → "2026-03-11"

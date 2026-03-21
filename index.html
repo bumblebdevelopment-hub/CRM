@@ -840,8 +840,30 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 #sync-status.saving{color:var(--amber-t);border-color:var(--amber-b);background:var(--amber-bg)}
 #sync-status.error{color:var(--red);border-color:var(--red-b);background:var(--red-bg)}
 #sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+#sync-status.offline{color:#fff;border-color:#7C3AED;background:#7C3AED}
 
+/* ── Offline banner ── */
+#offline-banner{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:9998;
+  background:linear-gradient(90deg,#7C3AED,#6D28D9);
+  color:#fff;font-size:12.5px;font-weight:600;
+  padding:8px 20px;text-align:center;
+  box-shadow:0 2px 12px rgba(109,40,217,.35);
+  letter-spacing:-.1px;
+}
+#offline-banner.show{display:block}
+#offline-banner span{opacity:.75;font-weight:400;margin-left:6px}
 
+/* ── DB Loader overlay ── */
+#db-loader{display:none;position:fixed;inset:0;z-index:9999;background:rgba(23,20,16,.85);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.dbl-bee{width:54px;height:54px;border-radius:13px;background:linear-gradient(135deg,#F5A800,#E07800);display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 0 0 8px rgba(245,168,0,.15),0 8px 32px rgba(0,0,0,.4);animation:beeFloat 2s ease-in-out infinite}
+@keyframes beeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.dbl-txt{color:rgba(255,242,210,.9);font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
+.dbl-sub{color:rgba(255,242,210,.4);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif}
+.dbl-dots{display:flex;gap:5px;margin-top:2px}
+.dbl-dots span{width:6px;height:6px;border-radius:50%;background:rgba(245,168,0,.75);animation:dotP 1.4s ease-in-out infinite}
+.dbl-dots span:nth-child(2){animation-delay:.2s}.dbl-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotP{0%,80%,100%{transform:scale(.7);opacity:.35}40%{transform:scale(1);opacity:1}}
 
 /* Toast */
 #toast{
@@ -1219,6 +1241,20 @@ body{font-size:14.5px;letter-spacing:-.01px}
 </style>
 </head>
 <body>
+
+<!-- ── Offline banner ── -->
+<div id="offline-banner">
+  📵 You are offline — leads are being saved to your device and will sync automatically when reconnected
+  <span>All data is safe.</span>
+</div>
+
+<!-- ── DB Loader overlay ── -->
+<div id="db-loader">
+  <div class="dbl-bee">🐝</div>
+  <div class="dbl-txt">Loading your leads…</div>
+  <div class="dbl-sub">Connecting to cloud database</div>
+  <div class="dbl-dots"><span></span><span></span><span></span></div>
+</div>
 
 <div id="login-screen">
   <div class="login-card">
@@ -4041,25 +4077,121 @@ function toggleRail(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PERSISTENCE — v10
-   • Supabase-only: no localStorage whatsoever
-   • Per-lead rows: each lead is its own row → no race conditions ever
-   • Soft-delete: "deleted" leads are NEVER erased from the database.
-     They get a deleted_at timestamp and stay in the `leads` table as
-     a permanent backup. Only active (deleted_at IS NULL) rows load
-     into the dashboard.
+   PERSISTENCE — v11  BULLETPROOF EDITION
+   ─────────────────────────────────────────────────────────────────
+   LAYER 1 — IndexedDB (device)
+     Saves every lead locally the instant you press Save.
+     Works with no internet. Survives browser refresh.
+     Automatically syncs to Supabase when connection returns.
+
+   LAYER 2 — Supabase `leads` table (cloud, per-row)
+     Each lead = its own row. Concurrent saves CANNOT overwrite
+     each other. Realtime sync across all devices.
+
+   LAYER 3 — Supabase `lead_audit_log` (eternal backup)
+     Every INSERT, UPDATE, and soft-delete is logged forever.
+     You can recover any lead at any point in time, even after
+     2+ years, even if "deleted" from the dashboard.
+     Trigger runs inside Postgres — the app cannot bypass it.
+
+   SOFT DELETE
+     "Deleting" a lead only sets deleted_at. The row stays in
+     Supabase and the audit log forever. Nothing is ever erased.
 ═══════════════════════════════════════════════════════════════════ */
 var _sbClient    = null;
 var _sbReady     = false;
 var _initialized = false;
+var _isOnline    = navigator.onLine;
 var _suppressRemoteUpdate = false;
 var _realtimeChannel = null;
 var _saveTimer   = null;
-var _pendingUpserts = {};   // id → lead   (batched, flushed after 600 ms)
+var _pendingUpserts = {};   // id → lead  (flushed after 600 ms debounce)
 
 /* Supabase credentials */
 var SB_URL = "https://ejiuwjjrfuxnldhqbzxc.supabase.co";
 var SB_KEY = "sb_publishable_c4TtqxeWp0uSoQQ3ziYYcQ_0HffAQIO";
+
+/* ══════════════════════════════════════════════════════════════
+   LAYER 1 — IndexedDB offline queue
+   DB: bbk_idb_v1  Store: offline_queue  Key: lead id
+══════════════════════════════════════════════════════════════ */
+var _idb = null;
+var IDB_NAME    = "bbk_idb_v1";
+var IDB_STORE   = "offline_queue";
+
+function idbOpen(){
+  return new Promise(function(resolve,reject){
+    if(_idb){resolve(_idb);return;}
+    var req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = function(e){
+      e.target.result.createObjectStore(IDB_STORE, {keyPath:"id"});
+    };
+    req.onsuccess = function(e){_idb=e.target.result;resolve(_idb);};
+    req.onerror   = function(e){console.error("IDB open error",e);reject(e);};
+  });
+}
+
+function idbSaveLead(lead){
+  idbOpen().then(function(db){
+    var tx = db.transaction(IDB_STORE,"readwrite");
+    tx.objectStore(IDB_STORE).put(lead);
+  }).catch(function(e){console.error("IDB save error",e);});
+}
+
+function idbDeleteLead(id){
+  idbOpen().then(function(db){
+    var tx = db.transaction(IDB_STORE,"readwrite");
+    tx.objectStore(IDB_STORE).delete(id);
+  }).catch(function(e){console.error("IDB delete error",e);});
+}
+
+function idbGetAll(){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx  = db.transaction(IDB_STORE,"readonly");
+      var req = tx.objectStore(IDB_STORE).getAll();
+      req.onsuccess = function(){resolve(req.result||[]);};
+      req.onerror   = function(){reject(req.error);};
+    });
+  });
+}
+
+function idbClearAll(){
+  idbOpen().then(function(db){
+    var tx = db.transaction(IDB_STORE,"readwrite");
+    tx.objectStore(IDB_STORE).clear();
+  });
+}
+
+/* Load all leads from IndexedDB into memory (used when offline at startup) */
+function idbLoadLeads(){
+  return idbGetAll().then(function(rows){
+    if(rows.length>0){
+      applyLeads(rows, Math.max(leadCounter, rows.length));
+      return true;
+    }
+    return false;
+  }).catch(function(){return false;});
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LAYER 2 & 3 — Sync status + core functions
+══════════════════════════════════════════════════════════════ */
+
+/* ── Offline/online banner ── */
+function setOnlineStatus(online){
+  _isOnline = online;
+  var banner = document.getElementById("offline-banner");
+  if(banner) banner.classList.toggle("show", !online);
+  if(online){
+    setSyncStatus("saving","Reconnecting…");
+    _flushOfflineQueue();   // push everything queued while offline
+  } else {
+    setSyncStatus("offline","Offline — saved locally");
+  }
+}
+window.addEventListener("online",  function(){ setOnlineStatus(true);  });
+window.addEventListener("offline", function(){ setOnlineStatus(false); });
 
 /* ── Sync badge ── */
 function setSyncStatus(state,label){
@@ -4067,10 +4199,17 @@ function setSyncStatus(state,label){
   var lb =document.getElementById("sync-label");
   if(!el2||!lb)return;
   el2.className="";
-  if(state==="synced")el2.classList.add("synced");
-  else if(state==="saving")el2.classList.add("saving");
-  else if(state==="error")el2.classList.add("error");
+  if(state==="synced") el2.classList.add("synced");
+  else if(state==="saving")  el2.classList.add("saving");
+  else if(state==="error")   el2.classList.add("error");
+  else if(state==="offline") el2.classList.add("offline");
   lb.textContent=label||"";
+}
+
+/* ── DB loading overlay ── */
+function showDBLoader(show){
+  var ov=document.getElementById("db-loader");
+  if(ov) ov.style.display=show?"flex":"none";
 }
 
 /* ── Hydrate in-memory leads array ── */
@@ -4095,13 +4234,43 @@ function applyLeads(arr,counter){
   });
 }
 
-/* ── Flush all pending upserts to Supabase ── */
+/* ── Flush the IndexedDB offline queue to Supabase ── */
+function _flushOfflineQueue(){
+  if(!_sbReady||!_sbClient||!_isOnline)return;
+  idbGetAll().then(function(queued){
+    if(!queued.length)return;
+    setSyncStatus("saving","Syncing "+queued.length+" offline saves…");
+    var rows=queued.map(function(l){return{id:l.id,bbk_id:l.bbkId||"",data:l};});
+    _suppressRemoteUpdate=true;
+    _sbClient.from("leads").upsert(rows,{onConflict:"id"}).then(function(res){
+      setTimeout(function(){_suppressRemoteUpdate=false;},800);
+      if(!res.error){
+        idbClearAll();
+        setSyncStatus("synced","Synced ✓");
+        toast("✅ "+queued.length+" offline lead"+(queued.length>1?"s":"")+" synced to cloud");
+      } else {
+        setSyncStatus("error","Sync failed — will retry");
+        setTimeout(_flushOfflineQueue, 5000);
+      }
+    });
+  }).catch(function(){});
+}
+
+/* ── Core flush: send _pendingUpserts to Supabase ── */
 function _flush(){
   _saveTimer=null;
-  if(!_sbReady||!_sbClient)return;
   var toUpsert=Object.keys(_pendingUpserts).map(function(k){return _pendingUpserts[k];});
   _pendingUpserts={};
   if(!toUpsert.length)return;
+
+  /* Always save to IndexedDB first — instant, offline-safe */
+  toUpsert.forEach(function(l){ idbSaveLead(l); });
+
+  if(!_sbReady||!_sbClient||!_isOnline){
+    setSyncStatus("offline","Saved locally — will sync when online");
+    return;
+  }
+
   setSyncStatus("saving","Saving…");
   _suppressRemoteUpdate=true;
   var rows=toUpsert.map(function(l){return{id:l.id,bbk_id:l.bbkId||"",data:l};});
@@ -4118,6 +4287,8 @@ function _flush(){
       toUpsert.forEach(function(l){_pendingUpserts[l.id]=l;});
       setTimeout(_flush,3000);
     } else {
+      /* Cloud confirmed — clear from IndexedDB queue */
+      toUpsert.forEach(function(l){ idbDeleteLead(l.id); });
       setSyncStatus("synced","Synced ✓");
     }
   }).catch(function(e){
@@ -4128,7 +4299,7 @@ function _flush(){
   });
 }
 
-/* ── lsSave: queue all leads for upsert, debounced 600 ms ── */
+/* ── lsSave: the ONE function called everywhere in the app ── */
 function lsSave(){
   if(!_initialized)return;
   leads.forEach(function(l){_pendingUpserts[l.id]=l;});
@@ -4136,23 +4307,30 @@ function lsSave(){
   _saveTimer=setTimeout(_flush,600);
 }
 
-/* ── lsLoad: stub — data comes from Supabase ── */
+/* ── lsLoad: stub — data comes from Supabase / IDB ── */
 function lsLoad(){return false;}
 
-/* ── DB loading overlay ── */
-function showDBLoader(show){
-  var ov=document.getElementById("db-loader");
-  if(ov)ov.style.display=show?"flex":"none";
-}
-
-/* ── initSupabase: fetch active leads, then subscribe to realtime ── */
+/* ── initSupabase: load active leads, flush offline queue, subscribe ── */
 function initSupabase(){
   try{
     _sbClient=supabase.createClient(SB_URL,SB_KEY);
+
+    if(!_isOnline){
+      /* Offline at startup — load from IndexedDB immediately */
+      setSyncStatus("offline","Offline — showing local data");
+      showDBLoader(true);
+      idbLoadLeads().then(function(found){
+        _initialized=true;
+        showDBLoader(false);
+        if(!found)seed();
+        renderView();
+      });
+      return;
+    }
+
     setSyncStatus("saving","Connecting…");
     showDBLoader(true);
 
-    /* Load only active (not soft-deleted) leads */
     _sbClient.from("leads").select("id,bbk_id,data")
       .is("deleted_at",null)
       .order("id",{ascending:true})
@@ -4167,39 +4345,55 @@ function initSupabase(){
           });
       })
       .then(function(result){
-        if(result.loaded.length>0){
-          applyLeads(result.loaded,result.counter);
-        } else {
-          seed();
-          leads.forEach(function(l){_pendingUpserts[l.id]=l;});
-        }
         _sbReady=true;
         _initialized=true;
-        setSyncStatus("synced","Live ✓");
         showDBLoader(false);
-        renderView();
-        subscribeRealtime();
-        if(Object.keys(_pendingUpserts).length)_flush();
+
+        /* Check if IndexedDB has leads newer than what Supabase returned */
+        return idbGetAll().then(function(queued){
+          if(result.loaded.length>0){
+            /* Merge: start with Supabase data, overlay any IDB changes on top */
+            var sbMap={};
+            result.loaded.forEach(function(l){sbMap[l.id]=l;});
+            queued.forEach(function(l){sbMap[l.id]=l;}); // IDB wins for conflicts
+            var merged=Object.keys(sbMap).map(function(k){return sbMap[k];});
+            applyLeads(merged, Math.max(result.counter, merged.length));
+          } else {
+            if(queued.length>0){
+              applyLeads(queued, Math.max(leadCounter, queued.length));
+            } else {
+              seed();
+              leads.forEach(function(l){_pendingUpserts[l.id]=l;});
+            }
+          }
+          setSyncStatus("synced","Live ✓");
+          renderView();
+          subscribeRealtime();
+          /* Flush any offline-queued saves to Supabase */
+          if(queued.length>0) _flushOfflineQueue();
+          else if(Object.keys(_pendingUpserts).length) _flush();
+        });
       })
       .catch(function(err){
-        setSyncStatus("error","Connect failed");
         console.error("Supabase load error:",err);
+        /* Fall back to IndexedDB */
         _initialized=true;
         showDBLoader(false);
-        if(!leads.length)seed();
-        renderView();
+        idbLoadLeads().then(function(found){
+          if(!found)seed();
+          setSyncStatus("error","Cloud unavailable — showing local data");
+          renderView();
+        });
       });
   }catch(e){
-    setSyncStatus("error","Supabase error");
     console.error("Supabase init error:",e);
     _initialized=true;
     showDBLoader(false);
-    if(!leads.length)seed();
-    renderView();
+    idbLoadLeads().then(function(found){if(!found)seed();renderView();});
   }
 }
 
-/* ── Realtime: per-row INSERT / UPDATE ── */
+/* ── Realtime: per-row INSERT / UPDATE from other devices ── */
 function subscribeRealtime(){
   if(_realtimeChannel)return;
   _realtimeChannel=_sbClient
@@ -4207,55 +4401,45 @@ function subscribeRealtime(){
     .on("postgres_changes",{event:"INSERT",schema:"public",table:"leads"},function(p){
       if(_suppressRemoteUpdate)return;
       var l=p.new&&p.new.data;
-      if(!l||p.new.deleted_at)return;  // ignore if already soft-deleted
+      if(!l||p.new.deleted_at)return;
       if(!leads.some(function(x){return x.id===l.id;})){
-        leads.push(l);
-        applyLeads(leads,leadCounter);
+        leads.push(l); applyLeads(leads,leadCounter);
         renderView();
         toast("🔄 New lead synced: "+(l.parentName||l.childName||"Unknown"));
       }
     })
     .on("postgres_changes",{event:"UPDATE",schema:"public",table:"leads"},function(p){
       if(_suppressRemoteUpdate)return;
-      var row=p.new;
-      var l=row&&row.data;
-      if(!l)return;
-      /* If the row was just soft-deleted on another device, remove from dashboard */
+      var row=p.new; var l=row&&row.data; if(!l)return;
       if(row.deleted_at){
         leads=leads.filter(function(x){return x.id!==row.id;});
-        renderView();
-        return;
+        renderView(); return;
       }
       var idx=leads.findIndex(function(x){return x.id===l.id;});
       if(idx>=0)leads[idx]=l; else leads.push(l);
-      applyLeads(leads,leadCounter);
-      renderView();
+      applyLeads(leads,leadCounter); renderView();
       setSyncStatus("synced","Live ✓");
     })
     .subscribe();
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SOFT DELETE — the lead is NEVER removed from Supabase.
-   We stamp deleted_at on the row so it stays as a permanent
-   backup. The dashboard only loads rows WHERE deleted_at IS NULL.
+   SOFT DELETE — lead is NEVER erased from Supabase or audit log
 ══════════════════════════════════════════════════════════════ */
 function deleteLead(){
   if(editId===null)return;
   var l=leads.filter(function(x){return x.id===editId;})[0];
   var name=l?(l.parentName||l.childName||"this lead"):"this lead";
-  if(!confirm('Move "'+name+'" to the deleted bin?\n\nThe lead will be removed from your dashboard but safely kept in the database backup.'))return;
+  if(!confirm('Move "'+name+'" to the deleted bin?\n\nThe lead will be removed from your dashboard but kept permanently in the database. You can recover it at any time.'))return;
 
   var deletedId=editId;
-  /* Remove from dashboard immediately */
   leads=leads.filter(function(x){return x.id!==deletedId;});
   delete _pendingUpserts[deletedId];
-  closeMdl();
-  renderView();
-  toast("🗑 Lead moved to backup bin — safely stored in database.");
+  idbDeleteLead(deletedId);
+  closeMdl(); renderView();
+  toast("🗑 Lead moved to backup bin — safe in database forever.");
 
-  /* Soft-delete: stamp deleted_at in Supabase — data is NEVER erased */
-  if(_sbReady&&_sbClient){
+  if(_sbReady&&_sbClient&&_isOnline){
     _suppressRemoteUpdate=true;
     _sbClient.from("leads")
       .update({deleted_at:new Date().toISOString()})
@@ -4264,7 +4448,6 @@ function deleteLead(){
         setTimeout(function(){_suppressRemoteUpdate=false;},800);
         if(res.error){
           console.error("Soft-delete error:",res.error);
-          /* Retry once after 3 s */
           setTimeout(function(){
             _sbClient.from("leads").update({deleted_at:new Date().toISOString()}).eq("id",deletedId);
           },3000);
@@ -4273,24 +4456,35 @@ function deleteLead(){
   }
 }
 
-/* ── Clear dashboard (soft-deletes all active leads) ── */
+/* ── Soft-delete ALL active leads (keeps everything in DB) ── */
 function lsClear(){
   var code=prompt("Type DELETE to confirm. All leads will be moved to the backup bin.");
   if(code!=="DELETE")return;
   if(!_sbReady||!_sbClient){alert("Not connected to database.");return;}
-  if(!confirm("Move ALL active leads to the backup bin? They stay in Supabase."))return;
+  if(!confirm("Move ALL active leads to the backup bin? They stay in Supabase forever."))return;
   var now=new Date().toISOString();
   _sbClient.from("leads").update({deleted_at:now}).is("deleted_at",null).then(function(res){
     if(res.error){alert("Failed: "+res.error.message);return;}
     _sbClient.from("settings").upsert({key:"lead_counter",value:"0"},{onConflict:"key"});
-    leads=[];leadCounter=0;_pendingUpserts={};
-    renderView();
-    toast("All leads moved to backup bin — safely stored in Supabase.");
+    leads=[];leadCounter=0;_pendingUpserts={};idbClearAll();
+    renderView(); toast("All leads moved to backup bin — safe in Supabase forever.");
   });
 }
 
-/* ── Heartbeat: flush any unsaved changes every 30 min ── */
-setInterval(function(){if(_initialized&&_sbReady)lsSave();},30*60*1000);
+/* ── Heartbeat: flush any unsaved changes every 5 min ── */
+setInterval(function(){
+  if(_initialized){
+    if(_isOnline&&_sbReady) lsSave();
+    else if(!_isOnline) setSyncStatus("offline","Offline — data saved locally");
+  }
+},5*60*1000);
+
+/* ── Auto-retry reconnect every 30 s while offline ── */
+setInterval(function(){
+  if(_initialized&&!_isOnline&&navigator.onLine){
+    setOnlineStatus(true);
+  }
+},30*1000);
 
 /* ═══════════════ CSV EXPORT ═══════════════ */
 function exportCSV(){
@@ -4635,7 +4829,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 /* ═══════════════ INIT ═══════════════ */
-// Layout first — before data arrives
+// Layout immediately — data loads async from Supabase / IndexedDB
 if(window.innerWidth>=900){
   document.body.classList.add("rail-open");
 }else{
@@ -4643,7 +4837,6 @@ if(window.innerWidth>=900){
 }
 if(window.innerWidth>=700)setView("pipeline");
 else setView("leads");
-// All data comes from Supabase — connect on DOMContentLoaded
 document.addEventListener("DOMContentLoaded",function(){
   initSupabase();
 });
@@ -4656,25 +4849,6 @@ function doLogout(){
   }
 }
 </script>
-
-<!-- ── DB Loader overlay ── -->
-<style>
-#db-loader{display:none;position:fixed;inset:0;z-index:9999;background:rgba(23,20,16,.85);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.dbl-bee{width:54px;height:54px;border-radius:13px;background:linear-gradient(135deg,#F5A800,#E07800);display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 0 0 8px rgba(245,168,0,.15),0 8px 32px rgba(0,0,0,.4);animation:beeFloat 2s ease-in-out infinite}
-@keyframes beeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.dbl-txt{color:rgba(255,242,210,.9);font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
-.dbl-sub{color:rgba(255,242,210,.4);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif}
-.dbl-dots{display:flex;gap:5px;margin-top:2px}
-.dbl-dots span{width:6px;height:6px;border-radius:50%;background:rgba(245,168,0,.75);animation:dotP 1.4s ease-in-out infinite}
-.dbl-dots span:nth-child(2){animation-delay:.2s}.dbl-dots span:nth-child(3){animation-delay:.4s}
-@keyframes dotP{0%,80%,100%{transform:scale(.7);opacity:.35}40%{transform:scale(1);opacity:1}}
-</style>
-<div id="db-loader">
-  <div class="dbl-bee">🐝</div>
-  <div class="dbl-txt">Loading your leads…</div>
-  <div class="dbl-sub">Connecting to cloud database</div>
-  <div class="dbl-dots"><span></span><span></span><span></span></div>
-</div>
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">

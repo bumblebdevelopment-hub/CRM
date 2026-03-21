@@ -4040,23 +4040,31 @@ function toggleRail(){
   el("rail-overlay").classList.toggle("show", isOpen && window.innerWidth < 900);
 }
 
-/* ═══════════════ PERSISTENCE ═══════════════ */
-var LS_KEY="bbk_crm_v8";
-var LS_BAK="bbk_crm_v8_bak";
-var ONE_YEAR_MS=365*24*60*60*1000;
-var _sbClient=null;
-var _sbReady=false;
-var _suppressRemoteUpdate=false;
-var _realtimeChannel=null;
+/* ═══════════════════════════════════════════════════════════════════
+   PERSISTENCE — v10
+   • Supabase-only: no localStorage whatsoever
+   • Per-lead rows: each lead is its own row → no race conditions ever
+   • Soft-delete: "deleted" leads are NEVER erased from the database.
+     They get a deleted_at timestamp and stay in the `leads` table as
+     a permanent backup. Only active (deleted_at IS NULL) rows load
+     into the dashboard.
+═══════════════════════════════════════════════════════════════════ */
+var _sbClient    = null;
+var _sbReady     = false;
+var _initialized = false;
+var _suppressRemoteUpdate = false;
+var _realtimeChannel = null;
+var _saveTimer   = null;
+var _pendingUpserts = {};   // id → lead   (batched, flushed after 600 ms)
 
-/* Hardcoded Supabase credentials — shared across all devices */
-var SB_URL="https://ejiuwjjrfuxnldhqbzxc.supabase.co";
-var SB_KEY="sb_publishable_c4TtqxeWp0uSoQQ3ziYYcQ_0HffAQIO";
+/* Supabase credentials */
+var SB_URL = "https://ejiuwjjrfuxnldhqbzxc.supabase.co";
+var SB_KEY = "sb_publishable_c4TtqxeWp0uSoQQ3ziYYcQ_0HffAQIO";
 
-/* ── Sync status UI ──────────────────────── */
+/* ── Sync badge ── */
 function setSyncStatus(state,label){
   var el2=document.getElementById("sync-status");
-  var lb=document.getElementById("sync-label");
+  var lb =document.getElementById("sync-label");
   if(!el2||!lb)return;
   el2.className="";
   if(state==="synced")el2.classList.add("synced");
@@ -4065,30 +4073,7 @@ function setSyncStatus(state,label){
   lb.textContent=label||"";
 }
 
-/* ── localStorage helpers (offline fallback) ── */
-function lsSaveLocal(){
-  try{
-    var payload=JSON.stringify({
-      leads:leads,leadCounter:leadCounter,
-      savedAt:new Date().toISOString(),
-      expiresAt:new Date(Date.now()+ONE_YEAR_MS).toISOString()
-    });
-    localStorage.setItem(LS_KEY,payload);
-    localStorage.setItem(LS_BAK,payload);
-  }catch(e){}
-}
-
-function lsLoadLocal(){
-  try{
-    var raw=localStorage.getItem(LS_KEY)||localStorage.getItem(LS_BAK);
-    if(!raw)return false;
-    var d=JSON.parse(raw);
-    if(!d||!d.leads||!d.leads.length)return false;
-    applyLeads(d.leads,d.leadCounter);
-    return true;
-  }catch(e){return false;}
-}
-
+/* ── Hydrate in-memory leads array ── */
 function applyLeads(arr,counter){
   leads=arr;
   leadCounter=counter||arr.length;
@@ -4096,7 +4081,6 @@ function applyLeads(arr,counter){
     if(!l.activityLog)l.activityLog=[];
     if(!l.siblingIds)l.siblingIds=[];
     if(!l.lastTouched)l.lastTouched="";
-    // Ensure all sub-objects exist before accessing nested props
     if(!l.outreach)l.outreach=mkO();
     if(!l.firstBuzz)l.firstBuzz=mkFB();
     if(!l.counselling)l.counselling=mkC();
@@ -4105,111 +4089,208 @@ function applyLeads(arr,counter){
     if(!l.fee)l.fee=mkFee();
     if(!l.screening.scores)l.screening.scores={};
     if(!l.screening.qa)l.screening.qa={};
-    // Migrate: ensure programs array exists
     if(!l.programs)l.programs=l.program?[l.program]:[];
-    // Migrate: sync fee.program from l.program if blank
     if(l.program&&!l.fee.program)l.fee.program=l.program;
-    // Migrate: ensure admissionForm.docs object exists
     if(!l.admissionForm.docs)l.admissionForm.docs={};
   });
 }
 
-/* ── Main save — Supabase (primary) + localStorage (backup) ── */
-function lsSave(){
-  lsSaveLocal();
+/* ── Flush all pending upserts to Supabase ── */
+function _flush(){
+  _saveTimer=null;
   if(!_sbReady||!_sbClient)return;
+  var toUpsert=Object.keys(_pendingUpserts).map(function(k){return _pendingUpserts[k];});
+  _pendingUpserts={};
+  if(!toUpsert.length)return;
   setSyncStatus("saving","Saving…");
   _suppressRemoteUpdate=true;
-  _sbClient
-    .from("bbk_crm")
-    .upsert({id:1,leads:leads,lead_counter:leadCounter,saved_at:new Date().toISOString()})
-    .then(function(res){
-      if(res.error){
-        setSyncStatus("error","Save failed");
-        console.error("Supabase save error:",res.error);
-      } else {
-        setSyncStatus("synced","Synced");
-      }
-      setTimeout(function(){_suppressRemoteUpdate=false;},800);
-    });
+  var rows=toUpsert.map(function(l){return{id:l.id,bbk_id:l.bbkId||"",data:l};});
+  var ops=[
+    _sbClient.from("leads").upsert(rows,{onConflict:"id"}),
+    _sbClient.from("settings").upsert({key:"lead_counter",value:String(leadCounter)},{onConflict:"key"})
+  ];
+  Promise.all(ops).then(function(results){
+    setTimeout(function(){_suppressRemoteUpdate=false;},800);
+    var failed=results.find(function(r){return r&&r.error;});
+    if(failed){
+      setSyncStatus("error","Save failed — retrying…");
+      console.error("Flush error:",failed.error);
+      toUpsert.forEach(function(l){_pendingUpserts[l.id]=l;});
+      setTimeout(_flush,3000);
+    } else {
+      setSyncStatus("synced","Synced ✓");
+    }
+  }).catch(function(e){
+    setTimeout(function(){_suppressRemoteUpdate=false;},800);
+    setSyncStatus("error","Save failed — retrying…");
+    toUpsert.forEach(function(l){_pendingUpserts[l.id]=l;});
+    setTimeout(_flush,3000);
+  });
 }
 
-/* ── Supabase init + real-time listener ────── */
+/* ── lsSave: queue all leads for upsert, debounced 600 ms ── */
+function lsSave(){
+  if(!_initialized)return;
+  leads.forEach(function(l){_pendingUpserts[l.id]=l;});
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(_flush,600);
+}
+
+/* ── lsLoad: stub — data comes from Supabase ── */
+function lsLoad(){return false;}
+
+/* ── DB loading overlay ── */
+function showDBLoader(show){
+  var ov=document.getElementById("db-loader");
+  if(ov)ov.style.display=show?"flex":"none";
+}
+
+/* ── initSupabase: fetch active leads, then subscribe to realtime ── */
 function initSupabase(){
   try{
     _sbClient=supabase.createClient(SB_URL,SB_KEY);
     setSyncStatus("saving","Connecting…");
+    showDBLoader(true);
 
-    _sbClient.from("bbk_crm").select("leads,lead_counter").eq("id",1).single()
+    /* Load only active (not soft-deleted) leads */
+    _sbClient.from("leads").select("id,bbk_id,data")
+      .is("deleted_at",null)
+      .order("id",{ascending:true})
       .then(function(res){
-        if(res.data&&Array.isArray(res.data.leads)){
-          applyLeads(res.data.leads,res.data.lead_counter);
-          lsSaveLocal();
-          renderView();
-        } else if(leads.length){
-          lsSave();
+        if(res.error)throw res.error;
+        var rows=res.data||[];
+        var loaded=rows.map(function(r){return r.data;}).filter(Boolean);
+        return _sbClient.from("settings").select("value").eq("key","lead_counter").maybeSingle()
+          .then(function(cr){
+            var counter=cr.data?parseInt(cr.data.value)||0:0;
+            return{loaded:loaded,counter:Math.max(counter,loaded.length)};
+          });
+      })
+      .then(function(result){
+        if(result.loaded.length>0){
+          applyLeads(result.loaded,result.counter);
+        } else {
+          seed();
+          leads.forEach(function(l){_pendingUpserts[l.id]=l;});
         }
         _sbReady=true;
-        setSyncStatus("synced","Live");
+        _initialized=true;
+        setSyncStatus("synced","Live ✓");
+        showDBLoader(false);
+        renderView();
         subscribeRealtime();
+        if(Object.keys(_pendingUpserts).length)_flush();
       })
       .catch(function(err){
         setSyncStatus("error","Connect failed");
-        console.error("Supabase fetch error:",err);
+        console.error("Supabase load error:",err);
+        _initialized=true;
+        showDBLoader(false);
+        if(!leads.length)seed();
+        renderView();
       });
   }catch(e){
     setSyncStatus("error","Supabase error");
     console.error("Supabase init error:",e);
+    _initialized=true;
+    showDBLoader(false);
+    if(!leads.length)seed();
+    renderView();
   }
 }
 
+/* ── Realtime: per-row INSERT / UPDATE ── */
 function subscribeRealtime(){
   if(_realtimeChannel)return;
   _realtimeChannel=_sbClient
-    .channel("bbk_crm_changes")
-    .on("postgres_changes",
-      {event:"UPDATE",schema:"public",table:"bbk_crm",filter:"id=eq.1"},
-      function(payload){
-        if(_suppressRemoteUpdate)return;
-        var d=payload.new;
-        if(d&&Array.isArray(d.leads)){
-          applyLeads(d.leads,d.lead_counter);
-          lsSaveLocal();
-          renderView();
-          setSyncStatus("synced","Live");
-          toast("🔄 Updated from another device");
-        }
+    .channel("leads_row_changes")
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"leads"},function(p){
+      if(_suppressRemoteUpdate)return;
+      var l=p.new&&p.new.data;
+      if(!l||p.new.deleted_at)return;  // ignore if already soft-deleted
+      if(!leads.some(function(x){return x.id===l.id;})){
+        leads.push(l);
+        applyLeads(leads,leadCounter);
+        renderView();
+        toast("🔄 New lead synced: "+(l.parentName||l.childName||"Unknown"));
       }
-    )
+    })
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"leads"},function(p){
+      if(_suppressRemoteUpdate)return;
+      var row=p.new;
+      var l=row&&row.data;
+      if(!l)return;
+      /* If the row was just soft-deleted on another device, remove from dashboard */
+      if(row.deleted_at){
+        leads=leads.filter(function(x){return x.id!==row.id;});
+        renderView();
+        return;
+      }
+      var idx=leads.findIndex(function(x){return x.id===l.id;});
+      if(idx>=0)leads[idx]=l; else leads.push(l);
+      applyLeads(leads,leadCounter);
+      renderView();
+      setSyncStatus("synced","Live ✓");
+    })
     .subscribe();
 }
 
-function lsLoad(){return lsLoadLocal();}
-
+/* ══════════════════════════════════════════════════════════════
+   SOFT DELETE — the lead is NEVER removed from Supabase.
+   We stamp deleted_at on the row so it stays as a permanent
+   backup. The dashboard only loads rows WHERE deleted_at IS NULL.
+══════════════════════════════════════════════════════════════ */
 function deleteLead(){
   if(editId===null)return;
   var l=leads.filter(function(x){return x.id===editId;})[0];
   var name=l?(l.parentName||l.childName||"this lead"):"this lead";
-  if(!confirm("Delete "+name+"? This cannot be undone."))return;
-  leads=leads.filter(function(x){return x.id!==editId;});
+  if(!confirm('Move "'+name+'" to the deleted bin?\n\nThe lead will be removed from your dashboard but safely kept in the database backup.'))return;
+
+  var deletedId=editId;
+  /* Remove from dashboard immediately */
+  leads=leads.filter(function(x){return x.id!==deletedId;});
+  delete _pendingUpserts[deletedId];
   closeMdl();
-  lsSave();
   renderView();
-  toast("Lead deleted.");
+  toast("🗑 Lead moved to backup bin — safely stored in database.");
+
+  /* Soft-delete: stamp deleted_at in Supabase — data is NEVER erased */
+  if(_sbReady&&_sbClient){
+    _suppressRemoteUpdate=true;
+    _sbClient.from("leads")
+      .update({deleted_at:new Date().toISOString()})
+      .eq("id",deletedId)
+      .then(function(res){
+        setTimeout(function(){_suppressRemoteUpdate=false;},800);
+        if(res.error){
+          console.error("Soft-delete error:",res.error);
+          /* Retry once after 3 s */
+          setTimeout(function(){
+            _sbClient.from("leads").update({deleted_at:new Date().toISOString()}).eq("id",deletedId);
+          },3000);
+        }
+      });
+  }
 }
 
+/* ── Clear dashboard (soft-deletes all active leads) ── */
 function lsClear(){
-  var code=prompt("Type DELETE to confirm wiping all data. This cannot be undone.");
+  var code=prompt("Type DELETE to confirm. All leads will be moved to the backup bin.");
   if(code!=="DELETE")return;
-  localStorage.removeItem(LS_KEY);
-  localStorage.removeItem(LS_BAK);
-  leads=[];leadCounter=0;
-  lsSave();renderView();
-  toast("All data cleared. Ready for real leads.");
+  if(!_sbReady||!_sbClient){alert("Not connected to database.");return;}
+  if(!confirm("Move ALL active leads to the backup bin? They stay in Supabase."))return;
+  var now=new Date().toISOString();
+  _sbClient.from("leads").update({deleted_at:now}).is("deleted_at",null).then(function(res){
+    if(res.error){alert("Failed: "+res.error.message);return;}
+    _sbClient.from("settings").upsert({key:"lead_counter",value:"0"},{onConflict:"key"});
+    leads=[];leadCounter=0;_pendingUpserts={};
+    renderView();
+    toast("All leads moved to backup bin — safely stored in Supabase.");
+  });
 }
 
-// Auto-backup every 30 min
-setInterval(function(){lsSave();},30*60*1000);
+/* ── Heartbeat: flush any unsaved changes every 30 min ── */
+setInterval(function(){if(_initialized&&_sbReady)lsSave();},30*60*1000);
 
 /* ═══════════════ CSV EXPORT ═══════════════ */
 function exportCSV(){
@@ -4554,7 +4635,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 /* ═══════════════ INIT ═══════════════ */
-if(!lsLoad()){seed();lsSaveLocal();}
+// Layout first — before data arrives
 if(window.innerWidth>=900){
   document.body.classList.add("rail-open");
 }else{
@@ -4562,7 +4643,7 @@ if(window.innerWidth>=900){
 }
 if(window.innerWidth>=700)setView("pipeline");
 else setView("leads");
-// Auto-connect Supabase on every device
+// All data comes from Supabase — connect on DOMContentLoaded
 document.addEventListener("DOMContentLoaded",function(){
   initSupabase();
 });
@@ -4575,6 +4656,25 @@ function doLogout(){
   }
 }
 </script>
+
+<!-- ── DB Loader overlay ── -->
+<style>
+#db-loader{display:none;position:fixed;inset:0;z-index:9999;background:rgba(23,20,16,.85);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.dbl-bee{width:54px;height:54px;border-radius:13px;background:linear-gradient(135deg,#F5A800,#E07800);display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 0 0 8px rgba(245,168,0,.15),0 8px 32px rgba(0,0,0,.4);animation:beeFloat 2s ease-in-out infinite}
+@keyframes beeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.dbl-txt{color:rgba(255,242,210,.9);font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
+.dbl-sub{color:rgba(255,242,210,.4);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif}
+.dbl-dots{display:flex;gap:5px;margin-top:2px}
+.dbl-dots span{width:6px;height:6px;border-radius:50%;background:rgba(245,168,0,.75);animation:dotP 1.4s ease-in-out infinite}
+.dbl-dots span:nth-child(2){animation-delay:.2s}.dbl-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotP{0%,80%,100%{transform:scale(.7);opacity:.35}40%{transform:scale(1);opacity:1}}
+</style>
+<div id="db-loader">
+  <div class="dbl-bee">🐝</div>
+  <div class="dbl-txt">Loading your leads…</div>
+  <div class="dbl-sub">Connecting to cloud database</div>
+  <div class="dbl-dots"><span></span><span></span><span></span></div>
+</div>
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">

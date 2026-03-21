@@ -4301,8 +4301,8 @@ function _flush(){
 
 /* ── lsSave: the ONE function called everywhere in the app ── */
 function lsSave(){
-  if(!_initialized)return;
   leads.forEach(function(l){_pendingUpserts[l.id]=l;});
+  if(!_initialized)return; // queued — will flush once init completes
   if(_saveTimer)clearTimeout(_saveTimer);
   _saveTimer=setTimeout(_flush,600);
 }
@@ -4335,11 +4335,12 @@ function initSupabase(){
       .is("deleted_at",null)
       .order("id",{ascending:true})
       .then(function(res){
-        if(res.error)throw res.error;
+        if(res.error)throw new Error(res.error.message||res.error.details||JSON.stringify(res.error));
         var rows=res.data||[];
         var loaded=rows.map(function(r){return r.data;}).filter(Boolean);
         return _sbClient.from("settings").select("value").eq("key","lead_counter").maybeSingle()
           .then(function(cr){
+            if(cr.error)console.warn("Settings read error (non-fatal):",cr.error.message||cr.error);
             var counter=cr.data?parseInt(cr.data.value)||0:0;
             return{loaded:loaded,counter:Math.max(counter,loaded.length)};
           });
@@ -4356,6 +4357,8 @@ function initSupabase(){
             var sbMap={};
             result.loaded.forEach(function(l){sbMap[l.id]=l;});
             queued.forEach(function(l){sbMap[l.id]=l;}); // IDB wins for conflicts
+            /* Also merge any leads saved to _pendingUpserts during init (e.g. user added a lead before load completed) */
+            Object.keys(_pendingUpserts).forEach(function(k){sbMap[k]=_pendingUpserts[k];});
             var merged=Object.keys(sbMap).map(function(k){return sbMap[k];});
             applyLeads(merged, Math.max(result.counter, merged.length));
           } else {
@@ -4366,24 +4369,38 @@ function initSupabase(){
               leads.forEach(function(l){_pendingUpserts[l.id]=l;});
             }
           }
+          /* Re-queue all current leads so _pendingUpserts reflects final merged state */
+          leads.forEach(function(l){_pendingUpserts[l.id]=l;});
           setSyncStatus("synced","Live ✓");
           renderView();
           subscribeRealtime();
-          /* Flush any offline-queued saves to Supabase */
+          /* Flush all pending saves to Supabase (covers leads added before init completed) */
           if(queued.length>0) _flushOfflineQueue();
-          else if(Object.keys(_pendingUpserts).length) _flush();
+          else _flush();
         });
       })
       .catch(function(err){
-        console.error("Supabase load error:",err);
-        /* Fall back to IndexedDB */
-        _initialized=true;
+        var msg=err&&(err.message||err.details||JSON.stringify(err))||String(err);
+        console.error("Supabase load error:",msg);
+        /* Fall back to IndexedDB and retry cloud connection after 5s */
         showDBLoader(false);
         idbLoadLeads().then(function(found){
           if(!found)seed();
           setSyncStatus("error","Cloud unavailable — showing local data");
           renderView();
         });
+        /* Auto-retry: re-attempt Supabase load after 5 seconds */
+        if(!_initialized){
+          setTimeout(function(){
+            if(!_sbReady&&_isOnline){
+              console.log("Retrying Supabase connection…");
+              setSyncStatus("saving","Reconnecting…");
+              _initialized=false;
+              initSupabase();
+            }
+          },5000);
+        }
+        _initialized=true;
       });
   }catch(e){
     console.error("Supabase init error:",e);

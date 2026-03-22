@@ -4131,10 +4131,14 @@ function idbOpen(){
   });
 }
 
+function sanitize(obj){
+  /* Strip any non-cloneable objects (Headers, Response, etc) via JSON round-trip */
+  try{return JSON.parse(JSON.stringify(obj));}catch(e){return obj;}
+}
 function idbSaveLead(lead){
   idbOpen().then(function(db){
     var tx = db.transaction(IDB_STORE,"readwrite");
-    tx.objectStore(IDB_STORE).put(lead);
+    tx.objectStore(IDB_STORE).put(sanitize(lead));
   }).catch(function(e){console.error("IDB save error",e);});
 }
 
@@ -4214,7 +4218,7 @@ function showDBLoader(show){
 
 /* ── Hydrate in-memory leads array ── */
 function applyLeads(arr,counter){
-  leads=arr;
+  leads=sanitize(arr);
   leadCounter=counter||arr.length;
   leads.forEach(function(l){
     if(!l.activityLog)l.activityLog=[];
@@ -4301,7 +4305,7 @@ function _flush(){
 
 /* ── lsSave: the ONE function called everywhere in the app ── */
 function lsSave(){
-  leads.forEach(function(l){_pendingUpserts[l.id]=l;});
+  leads.forEach(function(l){_pendingUpserts[l.id]=sanitize(l);});
   if(!_initialized)return; // queued — will flush once init completes
   if(_saveTimer)clearTimeout(_saveTimer);
   _saveTimer=setTimeout(_flush,600);
@@ -4313,7 +4317,16 @@ function lsLoad(){return false;}
 /* ── initSupabase: load active leads, flush offline queue, subscribe ── */
 function initSupabase(){
   try{
-    _sbClient=supabase.createClient(SB_URL,SB_KEY);
+    _sbClient=supabase.createClient(SB_URL,SB_KEY,{
+      auth:{
+        persistSession:false,
+        detectSessionInUrl:false,
+        autoRefreshToken:false
+      },
+      realtime:{
+        params:{eventsPerSecond:10}
+      }
+    });
 
     if(!_isOnline){
       /* Offline at startup — load from IndexedDB immediately */
@@ -4337,7 +4350,7 @@ function initSupabase(){
       .then(function(res){
         if(res.error)throw new Error(res.error.message||res.error.details||JSON.stringify(res.error));
         var rows=res.data||[];
-        var loaded=rows.map(function(r){return r.data;}).filter(Boolean);
+        var loaded=rows.map(function(r){return sanitize(r.data);}).filter(Boolean);
         return _sbClient.from("settings").select("value").eq("key","lead_counter").maybeSingle()
           .then(function(cr){
             if(cr.error)console.warn("Settings read error (non-fatal):",cr.error.message||cr.error);
@@ -4358,7 +4371,7 @@ function initSupabase(){
             result.loaded.forEach(function(l){sbMap[l.id]=l;});
             queued.forEach(function(l){sbMap[l.id]=l;}); // IDB wins for conflicts
             /* Also merge any leads saved to _pendingUpserts during init (e.g. user added a lead before load completed) */
-            Object.keys(_pendingUpserts).forEach(function(k){sbMap[k]=_pendingUpserts[k];});
+            Object.keys(_pendingUpserts).forEach(function(k){sbMap[k]=sanitize(_pendingUpserts[k]);});
             var merged=Object.keys(sbMap).map(function(k){return sbMap[k];});
             applyLeads(merged, Math.max(result.counter, merged.length));
           } else {
@@ -4370,7 +4383,7 @@ function initSupabase(){
             }
           }
           /* Re-queue all current leads so _pendingUpserts reflects final merged state */
-          leads.forEach(function(l){_pendingUpserts[l.id]=l;});
+          leads.forEach(function(l){_pendingUpserts[l.id]=sanitize(l);});
           setSyncStatus("synced","Live ✓");
           renderView();
           subscribeRealtime();
@@ -4380,8 +4393,17 @@ function initSupabase(){
         });
       })
       .catch(function(err){
-        var msg=err&&(err.message||err.details||JSON.stringify(err))||String(err);
+        var msg=err&&(err.message||err.details||String(err))||"Unknown error";
         console.error("Supabase load error:",msg);
+        /* DataCloneError: Headers object in Supabase response — retry immediately with clean state */
+        if(err&&err.name==="DataCloneError"){
+          console.warn("DataCloneError detected — retrying Supabase init with clean state");
+          _initialized=false;
+          _sbReady=false;
+          showDBLoader(false);
+          setTimeout(function(){initSupabase();},1000);
+          return;
+        }
         /* Fall back to IndexedDB and retry cloud connection after 5s */
         showDBLoader(false);
         idbLoadLeads().then(function(found){
@@ -4390,16 +4412,14 @@ function initSupabase(){
           renderView();
         });
         /* Auto-retry: re-attempt Supabase load after 5 seconds */
-        if(!_initialized){
-          setTimeout(function(){
-            if(!_sbReady&&_isOnline){
-              console.log("Retrying Supabase connection…");
-              setSyncStatus("saving","Reconnecting…");
-              _initialized=false;
-              initSupabase();
-            }
-          },5000);
-        }
+        setTimeout(function(){
+          if(!_sbReady&&_isOnline){
+            console.log("Retrying Supabase connection…");
+            setSyncStatus("saving","Reconnecting…");
+            _initialized=false;
+            initSupabase();
+          }
+        },5000);
         _initialized=true;
       });
   }catch(e){
@@ -4868,7 +4888,7 @@ function doLogout(){
 </script>
 
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js">
 </script>
 </body>
 </html>

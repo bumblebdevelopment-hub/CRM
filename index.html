@@ -25,7 +25,7 @@
   --amber:      #E8920A;
   --cream:      #FAF5EA;
   --petal:      #FEF0D0;
-  --charcoal:   #18161200;
+  --charcoal:   #181612;
   --ink:        #2D2A22;
   --muted:      #7C7361;
   --green:      #2DA870;  --green-bg:#EDFAF4; --green-b:#86DFBC;
@@ -2969,7 +2969,7 @@ function saveLead(){
   }else leads.push(cLead);
   diffAndLog(prev,cLead);
   closeMdl();
-  lsSave();
+  lsSaveSingle(cLead);
   renderView();
   toast(editId?"✓ Lead updated":"✓ New lead added — "+cLead.bbkId);
 }
@@ -4358,10 +4358,18 @@ function _flush(){
   });
 }
 
-/* ── lsSave: the ONE function called everywhere in the app ── */
+/* ── lsSave: bulk save — all leads (used by heartbeat, CSV import, etc.) ── */
 function lsSave(){
   leads.forEach(function(l){_pendingUpserts[l.id]=sanitize(l);});
   if(!_initialized)return; // queued — will flush once init completes
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(_flush,600);
+}
+
+/* ── lsSaveSingle: save ONE lead — used after modal save to avoid upsert storm ── */
+function lsSaveSingle(lead){
+  _pendingUpserts[lead.id]=sanitize(lead);
+  if(!_initialized)return;
   if(_saveTimer)clearTimeout(_saveTimer);
   _saveTimer=setTimeout(_flush,600);
 }
@@ -5008,7 +5016,7 @@ function doLogout(){
 </script>
 
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
 </script>
 </body>
 </html>

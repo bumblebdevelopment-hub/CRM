@@ -142,10 +142,8 @@ body.rail-open #rail-toggle svg{transform:scaleX(-1)}
 }
 .rail-bee{
   width:32px;height:32px;border-radius:9px;
-  background:linear-gradient(135deg,#F5A800 0%,#E07800 100%);
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;font-size:17px;line-height:1;
-  box-shadow:0 2px 8px rgba(245,168,0,.35), 0 0 0 1px rgba(245,168,0,.2);
+  flex-shrink:0;overflow:hidden;
 }
 .rail-brand{display:flex;flex-direction:column;gap:1px}
 .rail-brand-name{font-size:14px;font-weight:700;color:#FFF8E8;letter-spacing:-.3px;font-family:var(--font-display)}
@@ -800,14 +798,27 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
 .doc-progress{height:4px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)}
 .doc-progress-bar{height:100%;background:var(--green);border-radius:99px;transition:width .4s ease}
 
-/* Receipt */
-.receipt-box{border:1px solid var(--amber-b);border-radius:var(--r-xl);padding:16px;margin-top:12px;background:var(--amber-bg)}
-.receipt-title{font-size:13px;font-weight:700;color:var(--amber-t);margin-bottom:11px;display:flex;align-items:center;gap:6px}
-.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--amber-b);font-size:12px}
+/* Receipt — Refreshed Design (matches printed receipt) */
+.receipt-box{border-radius:var(--r-xl);margin-top:12px;background:#FFFDF7;overflow:hidden;border:1px solid #F0E6CE;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.receipt-topbar{background:linear-gradient(90deg,#F5A800 0%,#FBC84D 100%);height:5px}
+.receipt-logo-area{text-align:center;padding:16px 16px 4px}
+.receipt-logo-area img{width:52px;height:auto;margin-bottom:4px}
+.receipt-brand{font-family:var(--font-display);font-weight:800;font-size:15px;color:#3D3224}
+.receipt-tagline{font-size:10px;color:#9C8C6E;font-style:italic;margin-top:1px}
+.receipt-title{font-size:14px;font-weight:900;color:#3D3224;text-align:center;margin:10px 0 4px;letter-spacing:.5px}
+.receipt-title-line{width:40px;height:3px;background:#F5A800;border-radius:3px;margin:0 auto 6px}
+.receipt-no{text-align:center;font-size:11px;color:#7C7361;margin-bottom:12px}
+.receipt-table{padding:0 14px}
+.receipt-card{border:1.5px dashed #E6D9BE;border-radius:10px;padding:10px 14px;margin:0 0 10px}
+.receipt-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F4EDD8;font-size:12px}
 .receipt-row:last-child{border-bottom:none}
-.receipt-label{color:var(--amber-t);opacity:.75;font-weight:400}
-.receipt-val{font-weight:700;color:var(--amber-t)}
-.receipt-total{background:var(--amber);border-radius:var(--r-md);padding:10px 13px;margin-top:10px;display:flex;justify-content:space-between;font-weight:800;font-size:13.5px;color:#fff}
+.receipt-label{color:#7C7361;font-weight:600;font-size:11.5px}
+.receipt-val{font-weight:700;color:#3D3224;font-size:12px;text-align:right}
+.receipt-total-bar{background:#3D3224;display:flex;justify-content:space-between;align-items:center;padding:11px 18px;margin:0 14px 10px;border-radius:8px;font-weight:900;font-size:14px;color:#fff}
+.receipt-total-bar .receipt-total-amt{color:#F5C842;font-size:16px}
+.receipt-stamp{text-align:center;margin:8px 0}
+.receipt-stamp span{display:inline-block;border:2.5px solid #2DA870;color:#2DA870;font-weight:900;font-size:13px;padding:5px 24px;border-radius:6px;letter-spacing:1.5px}
+.receipt-footer-text{text-align:center;font-size:10px;color:#A89D88;padding:6px 14px 14px;line-height:1.5}
 .btn-download{width:100%;background:var(--ink-1);color:#fff;border:none;border-radius:var(--r-md);padding:10px;font-weight:700;font-size:12px;cursor:pointer;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .12s}
 .btn-download:hover{background:var(--ink-2)}
 
@@ -1067,12 +1078,10 @@ tr:hover td{background:var(--bg);cursor:pointer;color:var(--ink-1)}
   position:relative;
 }
 .login-bee{
-  width:68px;height:68px;
-  background:linear-gradient(135deg,#F5B020 0%,#E07800 100%);
-  border-radius:18px;display:flex;align-items:center;
-  justify-content:center;font-size:32px;
-  margin:0 auto 18px;
-  box-shadow:0 8px 28px rgba(245,158,11,.45), 0 0 0 1px rgba(245,158,11,.2);
+  width:76px;height:76px;
+  display:flex;align-items:center;
+  justify-content:center;
+  margin:0 auto 12px;
 }
 .login-title{
   text-align:center;font-size:23px;font-weight:800;
@@ -1225,8 +1234,8 @@ body{font-size:14.5px;letter-spacing:-.01px}
 
 
 /* === BumbleB Kidz Dashboard Polish === */
-.login-bee { display: none !important; }
-.rail-bee { display: none !important; }
+.login-bee { display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.rail-bee { display: flex; align-items: center; justify-content: center; }
 .login-title {
   font-size: 36px !important;
   letter-spacing: -1px !important;
@@ -1258,7 +1267,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
 
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-bee" style="display:none"></div>
+    <div class="login-bee"><img src="" id="login-logo-img" style="width:72px;height:72px;object-fit:contain" alt="BumbleB Kidz"/></div>
     <div class="login-title">BumbleB Kidz</div>
     <div class="login-sub">Admissions CRM — Staff Access Only</div>
 
@@ -1292,7 +1301,7 @@ body{font-size:14.5px;letter-spacing:-.01px}
 </button>
 <aside id="rail">
   <div class="rail-top">
-    <div class="rail-bee" style="display:none"></div>
+    <div class="rail-bee"><img src="" id="rail-logo-img" style="width:32px;height:32px;border-radius:9px;object-fit:contain" alt="BB"/></div>
     <div class="rail-brand">
       <div class="rail-brand-name">BumbleB Kidz</div>
       <div class="rail-brand-sub">Admissions</div>
@@ -1542,6 +1551,9 @@ var TEMPLATES={
   wa_fee_done:{label:"Fee Confirmation",text:"Hi [Parent Name]! 💛\n\nThank you! We have received the fee payment for *[Child Name]*.\n\n🧾 *Receipt No.:* [Receipt No]\n💰 *Amount Paid:* ₹[Amount]\n📅 *Date:* [Payment Date]\n\nWelcome officially to the *BumbleB Kidz* family! 📋🎊\n\nOrientation details will be shared soon. If you have any questions, we're always here to help.\n— Team BumbleB Kidz"},
   call_script:{label:"📞 Call Script",text:"CALL SCRIPT — BumbleB Kidz\n────────────────────────────\n\nOPENING (First 15 seconds):\n\"Hi, am I speaking with [Parent Name]? This is [Your Name] from BumbleB Kidz. You [registered at our event / reached out to us / visited our page] — hope [Child Name] is doing well! Do you have 2 minutes?\"\n\nEXPLORE (Listen more, talk less):\n• \"What kind of program are you looking for — morning school or evening activities?\"\n• \"How old is [Child Name]?\"\n• \"Have you visited any schools yet? What's most important to you in a preschool?\"\n\nPITCH (Tailor to what they said):\n• If they want prep school: \"Our morning program is play-based and Montessori-inspired — children absolutely love it.\"\n• If they want activities: \"Our evening centre is perfect — art, music, dance, and sensory play in a safe, fun environment.\"\n\nINVITE:\n\"I'd love to invite you for a FREE school visit — you can see the classrooms, meet the teachers, and get all your questions answered in person.\"\n\nCLOSE:\n\"When would be a good time for you? We have [Day] at [Time] available — shall I book it?\"\n\nIF NOT ANSWERING:\n→ Leave a friendly voicemail\n→ Send WhatsApp immediately after\n→ Try again at 5–7 PM\n→ Note it in the CRM for follow-up"}
 };
+
+/* ═══════════════ LOGO ═══════════════ */
+var BBK_LOGO_URI='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTMwIj4KICA8IS0tIEFudGVubmFlIC0tPgogIDxwYXRoIGQ9Ik00OCAzOCBDNDUgMjgsIDM4IDIyLCAzMiAxOCIgc3Ryb2tlPSIjM0QzMjI0IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTcyIDM4IEM3NSAyOCwgODIgMjIsIDg4IDE4IiBzdHJva2U9IiMzRDMyMjQiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSIzMCIgY3k9IjE2IiByPSI0IiBmaWxsPSIjM0QzMjI0Ii8+CiAgPGNpcmNsZSBjeD0iOTAiIGN5PSIxNiIgcj0iNCIgZmlsbD0iIzNEMzIyNCIvPgogIDwhLS0gV2luZ3MgLS0+CiAgPGVsbGlwc2UgY3g9IjMwIiBjeT0iNTgiIHJ4PSIyMiIgcnk9IjE2IiBmaWxsPSIjRThGNEZEIiBzdHJva2U9IiNCOEQ5RUUiIHN0cm9rZS13aWR0aD0iMS4yIiBvcGFjaXR5PSIwLjg1Ii8+CiAgPGVsbGlwc2UgY3g9IjkwIiBjeT0iNTgiIHJ4PSIyMiIgcnk9IjE2IiBmaWxsPSIjRThGNEZEIiBzdHJva2U9IiNCOEQ5RUUiIHN0cm9rZS13aWR0aD0iMS4yIiBvcGFjaXR5PSIwLjg1Ii8+CiAgPCEtLSBCb2R5IC0tPgogIDxlbGxpcHNlIGN4PSI2MCIgY3k9IjY4IiByeD0iMjgiIHJ5PSIzMiIgZmlsbD0iI0Y1Qzg0MiIvPgogIDwhLS0gU3RyaXBlcyAtLT4KICA8cGF0aCBkPSJNMzUgNTggUTYwIDUyIDg1IDU4IiBzdHJva2U9IiMzRDMyMjQiIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTMzIDcyIFE2MCA2NiA4NyA3MiIgc3Ryb2tlPSIjM0QzMjI0IiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zNSA4NiBRNjAgODAgODUgODYiIHN0cm9rZT0iIzNEMzIyNCIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEZhY2UgLS0+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzNEMzIyNCIvPgogIDxjaXJjbGUgY3g9IjcwIiBjeT0iNTAiIHI9IjQiIGZpbGw9IiMzRDMyMjQiLz4KICA8Y2lyY2xlIGN4PSI1MSIgY3k9IjQ5IiByPSIxLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iNzEiIGN5PSI0OSIgcj0iMS41IiBmaWxsPSJ3aGl0ZSIvPgogIDwhLS0gU21pbGUgLS0+CiAgPHBhdGggZD0iTTUyIDU4IFE2MCA2NSA2OCA1OCIgc3Ryb2tlPSIjM0QzMjI0IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwhLS0gQ2hlZWtzIC0tPgogIDxjaXJjbGUgY3g9IjQzIiBjeT0iNTYiIHI9IjQiIGZpbGw9IiNGNUE4NjIiIG9wYWNpdHk9IjAuNSIvPgogIDxjaXJjbGUgY3g9Ijc3IiBjeT0iNTYiIHI9IjQiIGZpbGw9IiNGNUE4NjIiIG9wYWNpdHk9IjAuNSIvPgogIDwhLS0gU3RpbmdlciAtLT4KICA8cGF0aCBkPSJNNjAgMTAwIEw1NiAxMDggTDY0IDEwOCBaIiBmaWxsPSIjM0QzMjI0Ii8+CiAgPCEtLSBCcmFuZCB0ZXh0IC0tPgogIDxyZWN0IHg9IjE0IiB5PSIxMTIiIHdpZHRoPSI5MiIgaGVpZ2h0PSIxOCIgcng9IjQiIGZpbGw9IiNGNUE4MDAiLz4KICA8dGV4dCB4PSI2MCIgeT0iMTI1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSJ3aGl0ZSIgbGV0dGVyLXNwYWNpbmc9IjAuNSI+QlVNQkxFQiBLSURaPC90ZXh0Pgo8L3N2Zz4K';
 
 /* ═══════════════ STATE ═══════════════ */
 var leads=[];
@@ -2754,18 +2766,30 @@ function pFee(){
   var receiptHtml="";
   if(rdy){
     receiptHtml='<div class="receipt-box">'+
-      '<div class="receipt-title">🧾 Payment Receipt — BumbleB Kidz</div>'+
-      '<div class="receipt-row"><span class="receipt-label">Receipt No.</span><span class="receipt-val">'+esc(f.receiptNo)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Lead ID</span><span class="receipt-val">'+esc(l.bbkId)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Student</span><span class="receipt-val">'+esc(l.childName||l.parentName)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Parent</span><span class="receipt-val">'+esc(l.parentName)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Programme</span><span class="receipt-val">'+esc(l.program)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Payment Plan</span><span class="receipt-val">'+esc(f.paymentPlan)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Mode</span><span class="receipt-val">'+esc(f.paymentMode)+'</span></div>'+
-      '<div class="receipt-row"><span class="receipt-label">Date</span><span class="receipt-val">'+esc(fmtDate(f.paymentDate)||f.paymentDate)+'</span></div>'+
-      (f.regFee?'<div class="receipt-row"><span class="receipt-label">Registration Fee</span><span class="receipt-val">₹'+Number(f.regFee).toLocaleString("en-IN")+'</span></div>':"")+
-      '<div class="receipt-total"><span>💰 Amount Paid</span><span>₹'+Number(f.amountPaid).toLocaleString("en-IN")+'</span></div>'+
-      '<div style="text-align:center;margin-top:8px;font-size:11px;color:#FCD34D;font-weight:700">✅ PAYMENT DONE</div>'+
+      '<div class="receipt-topbar"></div>'+
+      '<div class="receipt-logo-area">'+
+        '<img src="'+BBK_LOGO_URI+'" alt="BumbleB Kidz"/>'+
+        '<div class="receipt-brand">BumbleB Kidz</div>'+
+        '<div class="receipt-tagline">Where Little Minds Bloom</div>'+
+      '</div>'+
+      '<div class="receipt-title">FEE PAYMENT RECEIPT</div>'+
+      '<div class="receipt-title-line"></div>'+
+      '<div class="receipt-no">Receipt No. '+esc(f.receiptNo)+'</div>'+
+      '<div class="receipt-table"><div class="receipt-card">'+
+        '<div class="receipt-row"><span class="receipt-label">Lead ID</span><span class="receipt-val">'+esc(l.bbkId)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Student Name</span><span class="receipt-val">'+esc(l.childName||l.parentName)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Parent Name</span><span class="receipt-val">'+esc(l.parentName)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Phone</span><span class="receipt-val">'+esc(l.phone)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Programme</span><span class="receipt-val">'+esc(l.program)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Payment Plan</span><span class="receipt-val">'+esc(f.paymentPlan)+'</span></div>'+
+        (f.regFee?'<div class="receipt-row"><span class="receipt-label">Registration Fee</span><span class="receipt-val">₹'+Number(f.regFee).toLocaleString("en-IN")+'</span></div>':'')+
+        '<div class="receipt-row"><span class="receipt-label">Programme Fee</span><span class="receipt-val">₹'+Number(f.amount||0).toLocaleString("en-IN")+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Payment Mode</span><span class="receipt-val">'+esc(f.paymentMode)+'</span></div>'+
+        '<div class="receipt-row"><span class="receipt-label">Payment Date</span><span class="receipt-val">'+esc(fmtDate(f.paymentDate)||f.paymentDate)+'</span></div>'+
+      '</div></div>'+
+      '<div class="receipt-total-bar"><span>Total Paid</span><span class="receipt-total-amt">₹'+Number(f.amountPaid).toLocaleString("en-IN")+'</span></div>'+
+      '<div class="receipt-stamp"><span>PAYMENT RECEIVED</span></div>'+
+      '<div class="receipt-footer-text"><em>This is a computer-generated receipt.</em><br>BumbleB Kidz — Rajkot, Gujarat<br>Ph: 9274800717 | www.bumblebkidz.com</div>'+
       '<button class="btn-download" onclick="printReceipt()">🖨 Download / Print Receipt</button>'+
     '</div>';
   }
@@ -2791,28 +2815,57 @@ function printReceipt(){
   if(!cLead)return;
   var l=cLead,f=l.fee;
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fee Receipt - BumbleB Kidz</title>'+
-    '<style>body{font-family:serif;max-width:500px;margin:40px auto;padding:30px;border:3px double #F59E0B}.logo{text-align:center;font-size:28px;margin-bottom:4px}.school{text-align:center;font-size:20px;font-weight:900;color:#FCD34D}.tagline{text-align:center;font-size:11px;color:#78716C;margin-bottom:20px}.title{text-align:center;font-size:18px;font-weight:900;border-top:2px solid #F59E0B;border-bottom:2px solid #F59E0B;padding:8px;margin-bottom:20px;color:#FCD34D}table{width:100%;border-collapse:collapse}td{padding:8px 4px;border-bottom:1px solid #FDE68A;font-size:13px}.key{color:#FCD34D;font-weight:700;width:45%}.total-row td{background:#F59E0B;color:#1C1917;font-weight:900;font-size:15px;padding:10px 6px;border:none}.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--ink-3)}.paid-stamp{text-align:center;margin:15px 0;font-size:22px;font-weight:900;color:#059669;border:3px solid #059669;display:inline-block;padding:5px 20px;transform:rotate(-5deg);border-radius:4px}</style>'+
-    '</head><body>'+
-    '<div class="logo">📋</div>'+
-    '<div class="school">BumbleB Kidz</div>'+
-    '<div class="tagline">Where Little Minds Bloom</div>'+
+    '<style>'+
+    '@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");'+
+    '*{box-sizing:border-box;margin:0;padding:0}'+
+    'body{font-family:"Plus Jakarta Sans",sans-serif;max-width:520px;margin:30px auto;background:#fff;color:#3D3224}'+
+    '.page{border:1px solid #F0E6CE;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.06)}'+
+    '.topbar{height:5px;background:linear-gradient(90deg,#F5A800,#FBC84D)}'+
+    '.logo-area{text-align:center;padding:24px 20px 8px}'+
+    '.logo-area img{width:64px;height:auto}'+
+    '.brand{font-weight:800;font-size:18px;color:#3D3224;margin-top:4px}'+
+    '.tagline{font-size:11px;color:#9C8C6E;font-style:italic;margin-top:2px}'+
+    '.title{text-align:center;font-weight:900;font-size:17px;color:#3D3224;margin:14px 0 4px;letter-spacing:.8px}'+
+    '.title-line{width:48px;height:3px;background:#F5A800;border-radius:3px;margin:0 auto 8px}'+
+    '.rcpt-no{text-align:center;font-size:12px;color:#7C7361;margin-bottom:16px}'+
+    '.card{border:1.5px dashed #E6D9BE;border-radius:10px;padding:4px 18px;margin:0 20px 14px}'+
+    '.row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F4EDD8;font-size:13px}'+
+    '.row:last-child{border-bottom:none}'+
+    '.key{color:#7C7361;font-weight:600}'+
+    '.val{font-weight:700;color:#3D3224;text-align:right}'+
+    '.total-bar{background:#3D3224;display:flex;justify-content:space-between;align-items:center;padding:12px 22px;margin:0 20px 14px;border-radius:8px;font-weight:900;font-size:15px;color:#fff}'+
+    '.total-bar .amt{color:#F5C842;font-size:18px}'+
+    '.stamp{text-align:center;margin:10px 0}'+
+    '.stamp span{display:inline-block;border:2.5px solid #2DA870;color:#2DA870;font-weight:900;font-size:14px;padding:6px 28px;border-radius:6px;letter-spacing:2px}'+
+    '.foot{text-align:center;font-size:10.5px;color:#A89D88;padding:8px 20px 20px;line-height:1.6}'+
+    '@media print{body{margin:0}.page{border:none;box-shadow:none}}'+
+    '</style></head><body>'+
+    '<div class="page">'+
+    '<div class="topbar"></div>'+
+    '<div class="logo-area">'+
+      '<img src="'+BBK_LOGO_URI+'" alt="BumbleB Kidz"/>'+
+      '<div class="brand">BumbleB Kidz</div>'+
+      '<div class="tagline">Where Little Minds Bloom</div>'+
+    '</div>'+
     '<div class="title">FEE PAYMENT RECEIPT</div>'+
-    '<table>'+
-    '<tr><td class="key">Receipt No.</td><td>'+esc(f.receiptNo)+'</td></tr>'+
-    '<tr><td class="key">Lead ID</td><td>'+esc(l.bbkId)+'</td></tr>'+
-    '<tr><td class="key">Student Name</td><td>'+esc(l.childName||"—")+'</td></tr>'+
-    '<tr><td class="key">Parent Name</td><td>'+esc(l.parentName)+'</td></tr>'+
-    '<tr><td class="key">Phone</td><td>'+esc(l.phone)+'</td></tr>'+
-    '<tr><td class="key">Programme</td><td>'+esc(l.program)+'</td></tr>'+
-    '<tr><td class="key">Payment Plan</td><td>'+esc(f.paymentPlan)+'</td></tr>'+
-    (f.regFee?'<tr><td class="key">Registration Fee</td><td>₹'+Number(f.regFee).toLocaleString("en-IN")+'</td></tr>':'')+
-    '<tr><td class="key">Programme Fee</td><td>₹'+Number(f.amount||0).toLocaleString("en-IN")+'</td></tr>'+
-    '<tr><td class="key">Payment Mode</td><td>'+esc(f.paymentMode)+'</td></tr>'+
-    '<tr><td class="key">Payment Date</td><td>'+esc(fmtDate(f.paymentDate)||f.paymentDate)+'</td></tr>'+
-    '<tr class="total-row"><td>Total Paid</td><td>₹'+Number(f.amountPaid).toLocaleString("en-IN")+'</td></tr>'+
-    '</table>'+
-    '<div style="text-align:center;margin-top:16px"><span style="font-size:20px;font-weight:900;color:#059669;border:3px solid #059669;padding:4px 18px;border-radius:4px;display:inline-block">✅ PAYMENT RECEIVED</span></div>'+
-    '<div class="footer"><br>This is a computer-generated receipt.<br>BumbleB Kidz — Rajkot, Gujarat<br>📞 [Phone] &nbsp; 🌐 [Website]</div>'+
+    '<div class="title-line"></div>'+
+    '<div class="rcpt-no">Receipt No. '+esc(f.receiptNo)+'</div>'+
+    '<div class="card">'+
+      '<div class="row"><span class="key">Lead ID</span><span class="val">'+esc(l.bbkId)+'</span></div>'+
+      '<div class="row"><span class="key">Student Name</span><span class="val">'+esc(l.childName||"—")+'</span></div>'+
+      '<div class="row"><span class="key">Parent Name</span><span class="val">'+esc(l.parentName)+'</span></div>'+
+      '<div class="row"><span class="key">Phone</span><span class="val">'+esc(l.phone)+'</span></div>'+
+      '<div class="row"><span class="key">Programme</span><span class="val">'+esc(l.program)+'</span></div>'+
+      '<div class="row"><span class="key">Payment Plan</span><span class="val">'+esc(f.paymentPlan)+'</span></div>'+
+      (f.regFee?'<div class="row"><span class="key">Registration Fee</span><span class="val">₹'+Number(f.regFee).toLocaleString("en-IN")+'</span></div>':'')+
+      '<div class="row"><span class="key">Programme Fee</span><span class="val">₹'+Number(f.amount||0).toLocaleString("en-IN")+'</span></div>'+
+      '<div class="row"><span class="key">Payment Mode</span><span class="val">'+esc(f.paymentMode)+'</span></div>'+
+      '<div class="row"><span class="key">Payment Date</span><span class="val">'+esc(fmtDate(f.paymentDate)||f.paymentDate)+'</span></div>'+
+    '</div>'+
+    '<div class="total-bar"><span>Total Paid</span><span class="amt">₹'+Number(f.amountPaid).toLocaleString("en-IN")+'</span></div>'+
+    '<div class="stamp"><span>PAYMENT RECEIVED</span></div>'+
+    '<div class="foot"><em>This is a computer-generated receipt.</em><br>BumbleB Kidz — Rajkot, Gujarat<br>Ph: 9274800717 | www.bumblebkidz.com</div>'+
+    '</div>'+
     '</body></html>';
   var w=window.open('','_blank');
   w.document.write(html);
@@ -4246,7 +4299,8 @@ function _flushOfflineQueue(){
     setSyncStatus("saving","Syncing "+queued.length+" offline saves…");
     var rows=queued.map(function(l){return{id:l.id,bbk_id:l.bbkId||"",data:l};});
     _suppressRemoteUpdate=true;
-    _sbClient.from("leads").upsert(rows,{onConflict:"id"}).then(function(res){
+    _sbClient.from("leads").upsert(rows,{onConflict:"id"}).then(function(r){
+      var res=sanitize(r);
       setTimeout(function(){_suppressRemoteUpdate=false;},800);
       if(!res.error){
         idbClearAll();
@@ -4282,7 +4336,8 @@ function _flush(){
     _sbClient.from("leads").upsert(rows,{onConflict:"id"}),
     _sbClient.from("settings").upsert({key:"lead_counter",value:String(leadCounter)},{onConflict:"key"})
   ];
-  Promise.all(ops).then(function(results){
+  Promise.all(ops).then(function(raw){
+    var results=raw.map(function(r){return sanitize(r);});
     setTimeout(function(){_suppressRemoteUpdate=false;},800);
     var failed=results.find(function(r){return r&&r.error;});
     if(failed){
@@ -4317,16 +4372,40 @@ function lsLoad(){return false;}
 /* ── initSupabase: load active leads, flush offline queue, subscribe ── */
 function initSupabase(){
   try{
-    _sbClient=supabase.createClient(SB_URL,SB_KEY,{
-      auth:{
-        persistSession:false,
-        detectSessionInUrl:false,
-        autoRefreshToken:false
-      },
-      realtime:{
-        params:{eventsPerSecond:10}
-      }
-    });
+    /* Only create the client ONCE — retries reuse the existing client */
+    if(!_sbClient){
+      _sbClient=supabase.createClient(SB_URL,SB_KEY,{
+        auth:{
+          persistSession:false,
+          detectSessionInUrl:false,
+          autoRefreshToken:false,
+          storageKey:"bbk_auth_"+Date.now()
+        },
+        realtime:{
+          params:{eventsPerSecond:10}
+        },
+        global:{
+          headers:{"x-bbk-client":"crm-v6"},
+          fetch:function(url,opts){
+            return window.fetch(url,opts).then(function(res){
+              /* Read body once, then return a plain-object Response wrapper
+                 that contains NO Headers instance — prevents DataCloneError */
+              var status=res.status,ok=res.ok,statusText=res.statusText;
+              var hdrs={};
+              try{res.headers.forEach(function(v,k){hdrs[k]=v;});}catch(e){}
+              return res.text().then(function(bodyText){
+                return{
+                  ok:ok,status:status,statusText:statusText,
+                  headers:{get:function(k){return hdrs[k.toLowerCase()]||null;},forEach:function(fn){Object.keys(hdrs).forEach(function(k){fn(hdrs[k],k);});}},
+                  json:function(){return Promise.resolve(JSON.parse(bodyText));},
+                  text:function(){return Promise.resolve(bodyText);}
+                };
+              });
+            });
+          }
+        }
+      });
+    }
 
     if(!_isOnline){
       /* Offline at startup — load from IndexedDB immediately */
@@ -4344,14 +4423,25 @@ function initSupabase(){
     setSyncStatus("saving","Connecting…");
     showDBLoader(true);
 
-    _sbClient.from("leads").select("id,bbk_id,data")
+    /* Wrap Supabase query to strip non-cloneable objects (Headers etc.)
+       immediately — prevents DataCloneError when the SDK uses postMessage */
+    function safeQuery(promise){
+      return promise.then(function(res){
+        return {
+          data:  res.data ? JSON.parse(JSON.stringify(res.data)) : null,
+          error: res.error ? {message:res.error.message||String(res.error),details:res.error.details||""} : null
+        };
+      });
+    }
+
+    safeQuery(_sbClient.from("leads").select("id,bbk_id,data")
       .is("deleted_at",null)
-      .order("id",{ascending:true})
+      .order("id",{ascending:true}))
       .then(function(res){
         if(res.error)throw new Error(res.error.message||res.error.details||JSON.stringify(res.error));
         var rows=res.data||[];
         var loaded=rows.map(function(r){return sanitize(r.data);}).filter(Boolean);
-        return _sbClient.from("settings").select("value").eq("key","lead_counter").maybeSingle()
+        return safeQuery(_sbClient.from("settings").select("value").eq("key","lead_counter").maybeSingle())
           .then(function(cr){
             if(cr.error)console.warn("Settings read error (non-fatal):",cr.error.message||cr.error);
             var counter=cr.data?parseInt(cr.data.value)||0:0;
@@ -4395,15 +4485,6 @@ function initSupabase(){
       .catch(function(err){
         var msg=err&&(err.message||err.details||String(err))||"Unknown error";
         console.error("Supabase load error:",msg);
-        /* DataCloneError: Headers object in Supabase response — retry immediately with clean state */
-        if(err&&err.name==="DataCloneError"){
-          console.warn("DataCloneError detected — retrying Supabase init with clean state");
-          _initialized=false;
-          _sbReady=false;
-          showDBLoader(false);
-          setTimeout(function(){initSupabase();},1000);
-          return;
-        }
         /* Fall back to IndexedDB and retry cloud connection after 5s */
         showDBLoader(false);
         idbLoadLeads().then(function(found){
@@ -4411,7 +4492,7 @@ function initSupabase(){
           setSyncStatus("error","Cloud unavailable — showing local data");
           renderView();
         });
-        /* Auto-retry: re-attempt Supabase load after 5 seconds */
+        /* Auto-retry: re-attempt Supabase load after 5 seconds (reuse existing client) */
         setTimeout(function(){
           if(!_sbReady&&_isOnline){
             console.log("Retrying Supabase connection…");
@@ -4876,6 +4957,11 @@ if(window.innerWidth>=700)setView("pipeline");
 else setView("leads");
 document.addEventListener("DOMContentLoaded",function(){
   initSupabase();
+  // Set logo images from JS variable
+  var rl=document.getElementById("rail-logo-img");
+  if(rl)rl.src=BBK_LOGO_URI;
+  var ll=document.getElementById("login-logo-img");
+  if(ll)ll.src=BBK_LOGO_URI;
 });
 
 /* === Logout Function === */
@@ -4885,6 +4971,40 @@ function doLogout(){
     location.reload();
   }
 }
+</script>
+
+<!-- Patch postMessage / BroadcastChannel to prevent DataCloneError from Supabase SDK internals -->
+<script>
+(function(){
+  /* Patch window.postMessage */
+  var _origPM=window.postMessage;
+  window.postMessage=function(msg,origin,transfer){
+    try{
+      return _origPM.call(window,msg,origin,transfer);
+    }catch(e){
+      if(e&&e.name==="DataCloneError"){
+        try{
+          var safe=JSON.parse(JSON.stringify(msg));
+          return _origPM.call(window,safe,typeof origin==="string"?origin:"*");
+        }catch(ignore){}
+      }else{throw e;}
+    }
+  };
+
+  /* Patch BroadcastChannel.prototype.postMessage (GoTrue cross-tab sync) */
+  if(typeof BroadcastChannel!=="undefined"){
+    var _origBC=BroadcastChannel.prototype.postMessage;
+    BroadcastChannel.prototype.postMessage=function(msg){
+      try{
+        return _origBC.call(this,msg);
+      }catch(e){
+        if(e&&e.name==="DataCloneError"){
+          try{return _origBC.call(this,JSON.parse(JSON.stringify(msg)));}catch(ignore){}
+        }else{throw e;}
+      }
+    };
+  }
+})();
 </script>
 
 <!-- Supabase SDK -->
